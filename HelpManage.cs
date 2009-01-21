@@ -14,7 +14,7 @@ namespace Discuz.Data.Sqlite
         public IDataReader GetHelpList(int id)
         {
             DbParameter[] parms = {
-                                        DbHelper.MakeInParam("@id", (DbType)SqlDbType.Int, 4, id),
+                                        DbHelper.MakeInParam("@id", DbType.Int32, 4, id),
                                         
                                     };
             string sql = "SELECT [id],[title],[message],[pid],[orderby] FROM [" + BaseConfigs.GetTablePrefix + "help] WHERE [pid]=@id OR [id]=@id ORDER BY [pid] ASC, [orderby] ASC";
@@ -28,7 +28,7 @@ namespace Discuz.Data.Sqlite
         public IDataReader ShowHelp(int id)
         {
             DbParameter[] parms = {
-                                        DbHelper.MakeInParam("@id", (DbType)SqlDbType.Int, 4, id),
+                                        DbHelper.MakeInParam("@id", DbType.Int32, 4, id),
                                         
                                     };
             string sql = "SELECT [title],[message],[pid],[orderby] FROM [" + BaseConfigs.GetTablePrefix + "help] WHERE [id]=@id";
@@ -49,10 +49,10 @@ namespace Discuz.Data.Sqlite
         public void AddHelp(string title,string message,int pid,int orderby)
         {
             DbParameter[] parms = {
-                                        DbHelper.MakeInParam("@title", (DbType)SqlDbType.Char, 100, title),
-                                        DbHelper.MakeInParam("@message", (DbType)SqlDbType.NText,0,message),
-                                        DbHelper.MakeInParam("@pid", (DbType)SqlDbType.Int,4, pid),
-                                        DbHelper.MakeInParam("@orderby", (DbType)SqlDbType.Int, 4, orderby)
+                                        DbHelper.MakeInParam("@title", DbType.AnsiString, 100, title),
+                                        DbHelper.MakeInParam("@message", DbType.String,0,message),
+                                        DbHelper.MakeInParam("@pid", DbType.Int32,4, pid),
+                                        DbHelper.MakeInParam("@orderby", DbType.Int32, 4, orderby)
                                         
                                     };
             string sql = "INSERT INTO [" + BaseConfigs.GetTablePrefix + "help]([title],[message],[pid],[orderby]) VALUES(@title,@message,@pid,@orderby)";
@@ -62,7 +62,7 @@ namespace Discuz.Data.Sqlite
         public void DelHelp(string idlist)
         {
             //DbParameter[] parms = {
-            //                            DbHelper.MakeInParam("@idlist", (DbType)SqlDbType.Int, 100, idlist)
+            //                            DbHelper.MakeInParam("@idlist", DbType.Int32, 100, idlist)
                                        
                                         
             //                        };
@@ -74,11 +74,11 @@ namespace Discuz.Data.Sqlite
         public void ModHelp(int id,string title,string message,int pid,int orderby)
         {
             DbParameter[] parms = {
-                                        DbHelper.MakeInParam("@title", (DbType)SqlDbType.Char, 100, title),
-                                        DbHelper.MakeInParam("@message", (DbType)SqlDbType.NText,0,message),
-                                        DbHelper.MakeInParam("@pid", (DbType)SqlDbType.Int,4, pid),
-                                        DbHelper.MakeInParam("@orderby", (DbType)SqlDbType.Int, 4, orderby),
-                                        DbHelper.MakeInParam("@id", (DbType)SqlDbType.Int, 4, id)
+                                        DbHelper.MakeInParam("@title", DbType.AnsiString, 100, title),
+                                        DbHelper.MakeInParam("@message", DbType.String,0,message),
+                                        DbHelper.MakeInParam("@pid", DbType.Int32,4, pid),
+                                        DbHelper.MakeInParam("@orderby", DbType.Int32, 4, orderby),
+                                        DbHelper.MakeInParam("@id", DbType.Int32, 4, id)
                                         
                                     };
 
@@ -114,8 +114,8 @@ namespace Discuz.Data.Sqlite
         public void UpOrder(string orderby, string id)
         {
             DbParameter[] parms = {
-                                        DbHelper.MakeInParam("@orderby", (DbType)SqlDbType.Char, 100, orderby),
-                                        DbHelper.MakeInParam("@id", (DbType)SqlDbType.VarChar, 100,id),
+                                        DbHelper.MakeInParam("@orderby", DbType.AnsiString, 100, orderby),
+                                        DbHelper.MakeInParam("@id", DbType.AnsiString, 100,id),
                                         
                                         
                                     };

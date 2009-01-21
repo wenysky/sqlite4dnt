@@ -46,8 +46,8 @@ namespace Discuz.Data.Sqlite
         public DataTable GetAnnouncementList(string starttime, string endtime)
         {
             DbParameter[] parms = {
-										   DbHelper.MakeInParam("@starttime",(DbType)SqlDbType.DateTime, 8, DateTime.Parse(starttime)),
-										   DbHelper.MakeInParam("@endtime",(DbType)SqlDbType.DateTime, 8, DateTime.Parse(endtime))
+										   DbHelper.MakeInParam("@starttime",DbType.DateTime, 8, DateTime.Parse(starttime)),
+										   DbHelper.MakeInParam("@endtime",DbType.DateTime, 8, DateTime.Parse(endtime))
 									   };
             return DbHelper.ExecuteDataset(CommandType.Text, "SELECT * FROM [" + BaseConfigs.GetTablePrefix + "announcements] WHERE [starttime] <=@starttime AND [endtime] >=@starttime ORDER BY [displayorder], [id] DESC", parms).Tables[0];
         }
@@ -62,8 +62,8 @@ namespace Discuz.Data.Sqlite
         public DataTable GetSimplifiedAnnouncementList(string starttime, string endtime, int maxcount)
         {
             DbParameter[] parms = {
-										   DbHelper.MakeInParam("@starttime",(DbType)SqlDbType.DateTime, 8, DateTime.Parse(starttime)),
-										   DbHelper.MakeInParam("@endtime",(DbType)SqlDbType.DateTime, 8, DateTime.Parse(endtime))
+										   DbHelper.MakeInParam("@starttime",DbType.DateTime, 8, DateTime.Parse(starttime)),
+										   DbHelper.MakeInParam("@endtime",DbType.DateTime, 8, DateTime.Parse(endtime))
 									   };
             string topstr = " TOP " + maxcount;
             if (maxcount < 0)
@@ -77,13 +77,13 @@ namespace Discuz.Data.Sqlite
         public int AddAnnouncement(string poster, int posterid, string title, int displayorder, string starttime, string endtime, string message)
         {
             DbParameter[] parms = {
-                                        DbHelper.MakeInParam("@poster", (DbType)SqlDbType.NVarChar, 20, poster),
-                                        DbHelper.MakeInParam("@posterid", (DbType)SqlDbType.Int, 4, posterid),
-                                        DbHelper.MakeInParam("@title", (DbType)SqlDbType.NVarChar, 250, title),
-                                        DbHelper.MakeInParam("@displayorder", (DbType)SqlDbType.Int, 4, displayorder),
-                                        DbHelper.MakeInParam("@starttime", (DbType)SqlDbType.DateTime, 8, DateTime.Parse(starttime)),
-                                        DbHelper.MakeInParam("@endtime", (DbType)SqlDbType.DateTime, 8, DateTime.Parse(endtime)),
-                                        DbHelper.MakeInParam("@message", (DbType)SqlDbType.NText, 0, message)
+                                        DbHelper.MakeInParam("@poster", DbType.String, 20, poster),
+                                        DbHelper.MakeInParam("@posterid", DbType.Int32, 4, posterid),
+                                        DbHelper.MakeInParam("@title", DbType.String, 250, title),
+                                        DbHelper.MakeInParam("@displayorder", DbType.Int32, 4, displayorder),
+                                        DbHelper.MakeInParam("@starttime", DbType.DateTime, 8, DateTime.Parse(starttime)),
+                                        DbHelper.MakeInParam("@endtime", DbType.DateTime, 8, DateTime.Parse(endtime)),
+                                        DbHelper.MakeInParam("@message", DbType.String, 0, message)
                                     };
             string sqlstring = "INSERT INTO [" + BaseConfigs.GetTablePrefix + "announcements] ([poster],[posterid],[title],[displayorder],[starttime],[endtime],[message]) VALUES(@poster, @posterid, @title, @displayorder, @starttime, @endtime, @message)";
 
@@ -114,20 +114,20 @@ namespace Discuz.Data.Sqlite
 
         public DataTable GetAnnouncement(int id)
         {
-            DbParameter parm = DbHelper.MakeInParam("@id", (DbType)SqlDbType.Int, 4, id);
+            DbParameter parm = DbHelper.MakeInParam("@id", DbType.Int32, 4, id);
             return DbHelper.ExecuteDataset(CommandType.Text, "SELECT * FROM [" + BaseConfigs.GetTablePrefix + "announcements] WHERE [id]=@id", parm).Tables[0];
         }
 
         public int UpdateAnnouncement(int id, string poster, string title, int displayorder, string starttime, string endtime, string message)
         {
             DbParameter[] parms = {
-                                        DbHelper.MakeInParam("@id", (DbType)SqlDbType.Int, 4, id),
-                                        DbHelper.MakeInParam("@poster", (DbType)SqlDbType.NVarChar, 20, poster),
-                                        DbHelper.MakeInParam("@title", (DbType)SqlDbType.NVarChar, 250, title),
-                                        DbHelper.MakeInParam("@displayorder", (DbType)SqlDbType.Int, 4, displayorder),
-                                        DbHelper.MakeInParam("@starttime", (DbType)SqlDbType.DateTime, 8, DateTime.Parse(starttime)),
-                                        DbHelper.MakeInParam("@endtime", (DbType)SqlDbType.DateTime, 8, DateTime.Parse(endtime)),
-                                        DbHelper.MakeInParam("@message", (DbType)SqlDbType.NText, 0, message)
+                                        DbHelper.MakeInParam("@id", DbType.Int32, 4, id),
+                                        DbHelper.MakeInParam("@poster", DbType.String, 20, poster),
+                                        DbHelper.MakeInParam("@title", DbType.String, 250, title),
+                                        DbHelper.MakeInParam("@displayorder", DbType.Int32, 4, displayorder),
+                                        DbHelper.MakeInParam("@starttime", DbType.DateTime, 8, DateTime.Parse(starttime)),
+                                        DbHelper.MakeInParam("@endtime", DbType.DateTime, 8, DateTime.Parse(endtime)),
+                                        DbHelper.MakeInParam("@message", DbType.String, 0, message)
                                     };
             string sqlstring = "UPDATE [" + BaseConfigs.GetTablePrefix + "announcements] SET [displayorder]=@displayorder,[title]=@title, [poster]=@poster,[starttime]=@starttime,[endtime]=@endtime,[message]=@message WHERE [id]=@id";
 
@@ -136,7 +136,7 @@ namespace Discuz.Data.Sqlite
 
         public int DeleteAnnouncement(int id)
         {
-            DbParameter parm = DbHelper.MakeInParam("@id", (DbType)SqlDbType.Int, 4, id);
+            DbParameter parm = DbHelper.MakeInParam("@id", DbType.Int32, 4, id);
 
             return DbHelper.ExecuteNonQuery(CommandType.Text, "DELETE FROM [" + BaseConfigs.GetTablePrefix + "announcements] WHERE [id]=@id", parm);
         }
@@ -162,8 +162,9 @@ namespace Discuz.Data.Sqlite
         /// <returns>友情链接列表</returns>
         public DataTable GetForumLinkList()
         {
-            return DbHelper.ExecuteDataset(CommandType.Text, @"SELECT [name],[url],[note],[displayorder]+10000 AS [displayorder],[logo] FROM [" + BaseConfigs.GetTablePrefix + @"forumlinks] WHERE [displayorder] > 0 AND [logo] = '' 
-																	UNION SELECT [name],[url],[note],[displayorder],[logo] FROM [" + BaseConfigs.GetTablePrefix + @"forumlinks] WHERE [displayorder] > 0 AND [logo] <> '' ORDER BY [displayorder]").Tables[0];
+            System.Diagnostics.Debug.WriteLine("GetForumLinkList()");
+            string sql = string.Format("SELECT name,url,note,displayorder+10000 AS displayorder,logo FROM {0}forumlinks WHERE displayorder > 0 AND logo = '' UNION SELECT name,url,note,displayorder,logo FROM {0}forumlinks WHERE displayorder > 0 AND logo <> '' ORDER BY displayorder", BaseConfigs.GetTablePrefix);
+            return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0];
         }
 
         /// <summary>
@@ -218,14 +219,14 @@ namespace Discuz.Data.Sqlite
         {
 
             DbParameter[] parms = {
-									   DbHelper.MakeInParam("@uid",(DbType)SqlDbType.Int,4,uid),
-									   DbHelper.MakeInParam("@fromto",(DbType)SqlDbType.Int,4,fromto),
-									   DbHelper.MakeInParam("@sendcredits",(DbType)SqlDbType.Int,4,sendcredits),
-									   DbHelper.MakeInParam("@receivecredits",(DbType)SqlDbType.Int,4,receivecredits),
-									   DbHelper.MakeInParam("@send",(DbType)SqlDbType.Float,4,send),
-									   DbHelper.MakeInParam("@receive",(DbType)SqlDbType.Float,4,receive),
-									   DbHelper.MakeInParam("@paydate",(DbType)SqlDbType.VarChar,0,paydate),
-									   DbHelper.MakeInParam("@operation",(DbType)SqlDbType.Int,4,operation)
+									   DbHelper.MakeInParam("@uid",DbType.Int32,4,uid),
+									   DbHelper.MakeInParam("@fromto",DbType.Int32,4,fromto),
+									   DbHelper.MakeInParam("@sendcredits",DbType.Int32,4,sendcredits),
+									   DbHelper.MakeInParam("@receivecredits",DbType.Int32,4,receivecredits),
+									   DbHelper.MakeInParam("@send",DbType.Single,4,send),
+									   DbHelper.MakeInParam("@receive",DbType.Single,4,receive),
+									   DbHelper.MakeInParam("@paydate",DbType.AnsiString,0,paydate),
+									   DbHelper.MakeInParam("@operation",DbType.Int32,4,operation)
 								   };
 
             return DbHelper.ExecuteNonQuery(CommandType.Text, "INSERT INTO [" + BaseConfigs.GetTablePrefix + "creditslog] ([uid],[fromto],[sendcredits],[receivecredits],[send],[receive],[paydate],[operation]) VALUES(@uid,@fromto,@sendcredits,@receivecredits,@send,@receive,@paydate,@operation)", parms);
@@ -360,7 +361,7 @@ namespace Discuz.Data.Sqlite
         public void ClearDBLog(string dbname)
         {
             DbParameter[] parms = {
-									   DbHelper.MakeInParam("@DBName", (DbType)SqlDbType.VarChar, 50, dbname),
+									   DbHelper.MakeInParam("@DBName", DbType.AnsiString, 50, dbname),
 			};
             DbHelper.ExecuteNonQuery(CommandType.StoredProcedure, "" + BaseConfigs.GetTablePrefix + "shrinklog", parms);
         }
@@ -595,8 +596,8 @@ namespace Discuz.Data.Sqlite
         public void UpdateAnnouncementPoster(int posterid, string poster)
         {
             DbParameter[] parms = { 
-                                        DbHelper.MakeInParam("@posterid", (DbType)SqlDbType.Int, 4, posterid),
-                                        DbHelper.MakeInParam("@poster", (DbType)SqlDbType.VarChar, 20, poster)
+                                        DbHelper.MakeInParam("@posterid", DbType.Int32, 4, posterid),
+                                        DbHelper.MakeInParam("@poster", DbType.AnsiString, 20, poster)
                                     };
 
             DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "announcements] SET [poster]=@poster WHERE [posterid]=@posterid", parms);
@@ -604,15 +605,15 @@ namespace Discuz.Data.Sqlite
 
         public bool HasStatisticsByLastUserId(int lastuserid)
         {
-            DbParameter parm = DbHelper.MakeInParam("@lastuserid", (DbType)SqlDbType.Int, 4, lastuserid);
+            DbParameter parm = DbHelper.MakeInParam("@lastuserid", DbType.Int32, 4, lastuserid);
             return DbHelper.ExecuteDataset(CommandType.Text, "SELECT TOP 1 [lastuserid] FROM  [" + BaseConfigs.GetTablePrefix + "statistics]  WHERE [lastuserid]=@lastuserid",parm).Tables[0].Rows.Count > 0;
         }
 
         public void UpdateStatisticsLastUserName(int lastuserid, string lastusername)
         {
             DbParameter[] parms = { 
-                                        DbHelper.MakeInParam("@lastuserid", (DbType)SqlDbType.Int, 4, lastuserid),
-                                        DbHelper.MakeInParam("@lastusername", (DbType)SqlDbType.VarChar, 20, lastusername)
+                                        DbHelper.MakeInParam("@lastuserid", DbType.Int32, 4, lastuserid),
+                                        DbHelper.MakeInParam("@lastusername", DbType.AnsiString, 20, lastusername)
                                     };
 
             DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "statistics] SET [lastusername]=@lastusername WHERE [lastuserid]=@lastuserid", parms);
@@ -623,13 +624,13 @@ namespace Discuz.Data.Sqlite
             string sqlstring = "INSERT INTO [" + BaseConfigs.GetTablePrefix + "adminvisitlog] ([uid],[username],[groupid],[grouptitle],[ip],[actions],[others]) VALUES (@uid,@username,@groupid,@grouptitle,@ip,@actions,@others)";
 
             DbParameter[] parms = {
-					DbHelper.MakeInParam("@uid", (DbType)SqlDbType.Int, 4, uid),
-					DbHelper.MakeInParam("@username", (DbType)SqlDbType.VarChar, 50, username),
-					DbHelper.MakeInParam("@groupid", (DbType)SqlDbType.Int, 4, groupid),
-					DbHelper.MakeInParam("@grouptitle", (DbType)SqlDbType.VarChar, 50, grouptitle),
-					DbHelper.MakeInParam("@ip", (DbType)SqlDbType.VarChar, 15, ip),
-					DbHelper.MakeInParam("@actions", (DbType)SqlDbType.VarChar, 100, actions),
-					DbHelper.MakeInParam("@others", (DbType)SqlDbType.VarChar, 200, others)
+					DbHelper.MakeInParam("@uid", DbType.Int32, 4, uid),
+					DbHelper.MakeInParam("@username", DbType.AnsiString, 50, username),
+					DbHelper.MakeInParam("@groupid", DbType.Int32, 4, groupid),
+					DbHelper.MakeInParam("@grouptitle", DbType.AnsiString, 50, grouptitle),
+					DbHelper.MakeInParam("@ip", DbType.AnsiString, 15, ip),
+					DbHelper.MakeInParam("@actions", DbType.AnsiString, 100, actions),
+					DbHelper.MakeInParam("@others", DbType.AnsiString, 200, others)
 				};
 
             DbHelper.ExecuteNonQuery(CommandType.Text, sqlstring, parms);
@@ -707,13 +708,13 @@ namespace Discuz.Data.Sqlite
         public void AddTemplate(string name, string directory, string copyright, string author, string createdate, string ver, string fordntver)
         {
             DbParameter[] parms = { 
-                                        DbHelper.MakeInParam("@name", (DbType)SqlDbType.NVarChar, 50, name),
-                                        DbHelper.MakeInParam("@directory", (DbType)SqlDbType.NVarChar, 100, directory),
-                                        DbHelper.MakeInParam("@copyright", (DbType)SqlDbType.NVarChar, 100, copyright),
-                                        DbHelper.MakeInParam("@author", (DbType)SqlDbType.NVarChar, 100, author),
-                                        DbHelper.MakeInParam("@createdate", (DbType)SqlDbType.NVarChar, 50, createdate),
-                                        DbHelper.MakeInParam("@ver", (DbType)SqlDbType.NVarChar, 100, ver),
-                                        DbHelper.MakeInParam("@fordntver", (DbType)SqlDbType.NVarChar, 100, fordntver)
+                                        DbHelper.MakeInParam("@name", DbType.String, 50, name),
+                                        DbHelper.MakeInParam("@directory", DbType.String, 100, directory),
+                                        DbHelper.MakeInParam("@copyright", DbType.String, 100, copyright),
+                                        DbHelper.MakeInParam("@author", DbType.String, 100, author),
+                                        DbHelper.MakeInParam("@createdate", DbType.String, 50, createdate),
+                                        DbHelper.MakeInParam("@ver", DbType.String, 100, ver),
+                                        DbHelper.MakeInParam("@fordntver", DbType.String, 100, fordntver)
                                     };
             string sql = "INSERT INTO [" + BaseConfigs.GetTablePrefix + "templates] ([name],[directory],[copyright],[author],[createdate],[ver],[fordntver]) VALUES(@name,@directory,@copyright,@author,@createdate,@ver,@fordntver)";
 
@@ -730,9 +731,9 @@ namespace Discuz.Data.Sqlite
         public int AddTemplate(string templateName, string directory, string copyright)
         {
             DbParameter[] parms = {
-				DbHelper.MakeInParam("@templatename", (DbType)SqlDbType.VarChar, 0, templateName),
-				DbHelper.MakeInParam("@directory", (DbType)SqlDbType.VarChar, 0, directory),
-				DbHelper.MakeInParam("@copyright", (DbType)SqlDbType.VarChar, 0, copyright),
+				DbHelper.MakeInParam("@templatename", DbType.AnsiString, 0, templateName),
+				DbHelper.MakeInParam("@directory", DbType.AnsiString, 0, directory),
+				DbHelper.MakeInParam("@copyright", DbType.AnsiString, 0, copyright),
 
 			};
             return Utils.StrToInt(DbHelper.ExecuteScalar(CommandType.Text, "INSERT INTO [" + BaseConfigs.GetTablePrefix + "templates]([templatename],[directory],[copyright]) VALUES(@templatename, @directory, @copyright);SELECT SCOPE_IDENTITY()", parms), -1);
@@ -745,7 +746,7 @@ namespace Discuz.Data.Sqlite
         public void DeleteTemplateItem(int templateid)
         {
             DbParameter[] parms = {
-				DbHelper.MakeInParam("@templateid", (DbType)SqlDbType.Int, 4, templateid)
+				DbHelper.MakeInParam("@templateid", DbType.Int32, 4, templateid)
 			};
             DbHelper.ExecuteNonQuery(CommandType.Text, "DELETE FROM [" + BaseConfigs.GetTablePrefix + "templates] WHERE [templateid]=@templateid");
         }
@@ -792,18 +793,18 @@ namespace Discuz.Data.Sqlite
             try
             {
                 DbParameter[] parms = { 
-                                        DbHelper.MakeInParam("@moderatoruid", (DbType)SqlDbType.Int, 4, moderatoruid),
-                                        DbHelper.MakeInParam("@moderatorname", (DbType)SqlDbType.NVarChar, 50, moderatorname),
-                                        DbHelper.MakeInParam("@groupid", (DbType)SqlDbType.Int, 4, groupid),
-                                        DbHelper.MakeInParam("@grouptitle", (DbType)SqlDbType.NVarChar, 50, grouptitle),
-                                        DbHelper.MakeInParam("@ip", (DbType)SqlDbType.VarChar, 15, ip),
-                                        DbHelper.MakeInParam("@postdatetime", (DbType)SqlDbType.DateTime, 8, DateTime.Parse(postdatetime)),
-                                        DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int, 4, fid),
-                                        DbHelper.MakeInParam("@fname", (DbType)SqlDbType.NVarChar, 100, fname),
-                                        DbHelper.MakeInParam("@tid", (DbType)SqlDbType.Int, 8, tid),
-                                        DbHelper.MakeInParam("@title", (DbType)SqlDbType.VarChar, 200, title),
-                                        DbHelper.MakeInParam("@actions", (DbType)SqlDbType.VarChar, 50, actions),
-                                        DbHelper.MakeInParam("@reason", (DbType)SqlDbType.NVarChar, 200, reason)
+                                        DbHelper.MakeInParam("@moderatoruid", DbType.Int32, 4, moderatoruid),
+                                        DbHelper.MakeInParam("@moderatorname", DbType.String, 50, moderatorname),
+                                        DbHelper.MakeInParam("@groupid", DbType.Int32, 4, groupid),
+                                        DbHelper.MakeInParam("@grouptitle", DbType.String, 50, grouptitle),
+                                        DbHelper.MakeInParam("@ip", DbType.AnsiString, 15, ip),
+                                        DbHelper.MakeInParam("@postdatetime", DbType.DateTime, 8, DateTime.Parse(postdatetime)),
+                                        DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid),
+                                        DbHelper.MakeInParam("@fname", DbType.String, 100, fname),
+                                        DbHelper.MakeInParam("@tid", DbType.Int32, 8, tid),
+                                        DbHelper.MakeInParam("@title", DbType.AnsiString, 200, title),
+                                        DbHelper.MakeInParam("@actions", DbType.AnsiString, 50, actions),
+                                        DbHelper.MakeInParam("@reason", DbType.String, 200, reason)
                                     };
 
                 string sqlstring = "INSERT INTO [" + BaseConfigs.GetTablePrefix +
@@ -989,7 +990,7 @@ namespace Discuz.Data.Sqlite
         public DataTable GetErrLoginRecordByIP(string ip)
         {
             DbParameter[] parms = {
-										 DbHelper.MakeInParam("@ip",(DbType)SqlDbType.Char,15, ip),
+										 DbHelper.MakeInParam("@ip",DbType.AnsiString,15, ip),
 			                        };
             return DbHelper.ExecuteDataset(CommandType.Text, "SELECT TOP 1 [errcount], [lastupdate] FROM [" + BaseConfigs.GetTablePrefix + "failedlogins] WHERE [ip]=@ip", parms).Tables[0];
         }
@@ -1002,7 +1003,7 @@ namespace Discuz.Data.Sqlite
         public int AddErrLoginCount(string ip)
         {
             DbParameter[] parms = {
-										 DbHelper.MakeInParam("@ip",(DbType)SqlDbType.Char,15, ip),
+										 DbHelper.MakeInParam("@ip",DbType.AnsiString,15, ip),
 			                        };
             return DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "failedlogins] SET [errcount]=[errcount]+1, [lastupdate]=GETDATE() WHERE [ip]=@ip", parms);
         }
@@ -1015,7 +1016,7 @@ namespace Discuz.Data.Sqlite
         public int AddErrLoginRecord(string ip)
         {
             DbParameter[] parms = {
-										 DbHelper.MakeInParam("@ip",(DbType)SqlDbType.Char,15, ip),
+										 DbHelper.MakeInParam("@ip",DbType.AnsiString,15, ip),
 			                        };
             return DbHelper.ExecuteNonQuery(CommandType.Text, "INSERT INTO [" + BaseConfigs.GetTablePrefix + "failedlogins] ([ip], [errcount], [lastupdate]) VALUES(@ip, 1, GETDATE())", parms);
         }
@@ -1028,7 +1029,7 @@ namespace Discuz.Data.Sqlite
         public int ResetErrLoginCount(string ip)
         {
             DbParameter[] parms = {
-										 DbHelper.MakeInParam("@ip",(DbType)SqlDbType.Char,15, ip),
+										 DbHelper.MakeInParam("@ip",DbType.AnsiString,15, ip),
 			                        };
             return DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "failedlogins] SET [errcount]=1, [lastupdate]=GETDATE() WHERE [ip]=@ip", parms);
         }
@@ -1041,7 +1042,7 @@ namespace Discuz.Data.Sqlite
         public int DeleteErrLoginRecord(string ip)
         {
             DbParameter[] parms = {
-										 DbHelper.MakeInParam("@ip",(DbType)SqlDbType.Char,15, ip),
+										 DbHelper.MakeInParam("@ip",DbType.AnsiString,15, ip),
 			};
             return DbHelper.ExecuteNonQuery(CommandType.Text, "DELETE FROM [" + BaseConfigs.GetTablePrefix + "failedlogins] WHERE [ip]=@ip OR DATEDIFF(n,[lastupdate], GETDATE()) > 15", parms);
         }
@@ -1059,8 +1060,8 @@ namespace Discuz.Data.Sqlite
         public int UpdateDetachTable(int fid, string description)
         {
             DbParameter[] parms = {
-                                        DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int, 4, fid),
-                                        DbHelper.MakeInParam("@description", (DbType)SqlDbType.NVarChar, 50, description)
+                                        DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid),
+                                        DbHelper.MakeInParam("@description", DbType.String, 50, description)
                                     };
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "tablelist] SET [description]=@description  Where [id]=@fid";
             //fid, description);
@@ -1148,9 +1149,9 @@ namespace Discuz.Data.Sqlite
         public void AddPostTableToTableList(string description, int mintid, int maxtid)
         {
             DbParameter[] parms = { 
-                                        DbHelper.MakeInParam("@description", (DbType)SqlDbType.NVarChar, 50, description),
-                                        DbHelper.MakeInParam("@mintid", (DbType)SqlDbType.Int, 4, mintid),
-                                        DbHelper.MakeInParam("@maxtid", (DbType)SqlDbType.Int, 4, maxtid)
+                                        DbHelper.MakeInParam("@description", DbType.String, 50, description),
+                                        DbHelper.MakeInParam("@mintid", DbType.Int32, 4, mintid),
+                                        DbHelper.MakeInParam("@maxtid", DbType.Int32, 4, maxtid)
                                     };
             DbHelper.ExecuteNonQuery(CommandType.Text, "INSERT INTO [" + BaseConfigs.GetTablePrefix + "tablelist] ([description],[mintid],[maxtid]) VALUES(@description, @mintid, @maxtid)",parms);
         }
@@ -1217,15 +1218,15 @@ namespace Discuz.Data.Sqlite
         public void AddAdInfo(int available, string type, int displayorder, string title, string targets, string parameters, string code, string starttime, string endtime)
         {
             DbParameter[] parms = { 
-                                        DbHelper.MakeInParam("@available", (DbType)SqlDbType.Int, 4, available),
-                                        DbHelper.MakeInParam("@type", (DbType)SqlDbType.NVarChar, 50, type),
-                                        DbHelper.MakeInParam("@displayorder", (DbType)SqlDbType.Int, 4, displayorder),
-                                        DbHelper.MakeInParam("@title", (DbType)SqlDbType.NVarChar, 50, title),
-                                        DbHelper.MakeInParam("@targets", (DbType)SqlDbType.NVarChar, 255, targets),
-                                        DbHelper.MakeInParam("@parameters", (DbType)SqlDbType.NText, 0, parameters),
-                                        DbHelper.MakeInParam("@code", (DbType)SqlDbType.NText, 0, code),
-                                        DbHelper.MakeInParam("@starttime", (DbType)SqlDbType.DateTime, 8, DateTime.Parse(starttime)),
-                                        DbHelper.MakeInParam("@endtime", (DbType)SqlDbType.DateTime, 8, DateTime.Parse(endtime))                                        
+                                        DbHelper.MakeInParam("@available", DbType.Int32, 4, available),
+                                        DbHelper.MakeInParam("@type", DbType.String, 50, type),
+                                        DbHelper.MakeInParam("@displayorder", DbType.Int32, 4, displayorder),
+                                        DbHelper.MakeInParam("@title", DbType.String, 50, title),
+                                        DbHelper.MakeInParam("@targets", DbType.String, 255, targets),
+                                        DbHelper.MakeInParam("@parameters", DbType.String, 0, parameters),
+                                        DbHelper.MakeInParam("@code", DbType.String, 0, code),
+                                        DbHelper.MakeInParam("@starttime", DbType.DateTime, 8, DateTime.Parse(starttime)),
+                                        DbHelper.MakeInParam("@endtime", DbType.DateTime, 8, DateTime.Parse(endtime))                                        
                                     };
             string sql = "INSERT INTO  [" + BaseConfigs.GetTablePrefix + "advertisements] ([available],[type],[displayorder],[title],[targets],[parameters],[code],[starttime],[endtime]) VALUES(@available,@type,@displayorder,@title,@targets,@parameters,@code,@starttime,@endtime)";
 
@@ -1245,7 +1246,7 @@ namespace Discuz.Data.Sqlite
         public int UpdateAdvertisementAvailable(string aidlist, int available)
         {
             DbParameter[] parms = { 
-                                        DbHelper.MakeInParam("@available", (DbType)SqlDbType.Int, 4, available)
+                                        DbHelper.MakeInParam("@available", DbType.Int32, 4, available)
                                     };
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "advertisements] SET [available]=@available  WHERE [advid] IN(" + aidlist + ")";
 
@@ -1255,16 +1256,16 @@ namespace Discuz.Data.Sqlite
         public int UpdateAdvertisement(int aid, int available, string type, int displayorder, string title, string targets, string parameters, string code, string starttime, string endtime)
         {
             DbParameter[] parms = {
-                                        DbHelper.MakeInParam("@aid", (DbType)SqlDbType.Int, 4, aid),
-                                        DbHelper.MakeInParam("@available", (DbType)SqlDbType.Int, 4, available),
-                                        DbHelper.MakeInParam("@type", (DbType)SqlDbType.NVarChar, 50, type),
-                                        DbHelper.MakeInParam("@displayorder", (DbType)SqlDbType.Int, 4, displayorder),
-                                        DbHelper.MakeInParam("@title", (DbType)SqlDbType.NVarChar, 50, title),
-                                        DbHelper.MakeInParam("@targets", (DbType)SqlDbType.NVarChar, 255, targets),
-                                        DbHelper.MakeInParam("@parameters", (DbType)SqlDbType.NText, 0, parameters),
-                                        DbHelper.MakeInParam("@code", (DbType)SqlDbType.NText, 0, code),
-                                        DbHelper.MakeInParam("@starttime", (DbType)SqlDbType.DateTime, 8, DateTime.Parse(starttime)),
-                                        DbHelper.MakeInParam("@endtime", (DbType)SqlDbType.DateTime, 8, DateTime.Parse(endtime))
+                                        DbHelper.MakeInParam("@aid", DbType.Int32, 4, aid),
+                                        DbHelper.MakeInParam("@available", DbType.Int32, 4, available),
+                                        DbHelper.MakeInParam("@type", DbType.String, 50, type),
+                                        DbHelper.MakeInParam("@displayorder", DbType.Int32, 4, displayorder),
+                                        DbHelper.MakeInParam("@title", DbType.String, 50, title),
+                                        DbHelper.MakeInParam("@targets", DbType.String, 255, targets),
+                                        DbHelper.MakeInParam("@parameters", DbType.String, 0, parameters),
+                                        DbHelper.MakeInParam("@code", DbType.String, 0, code),
+                                        DbHelper.MakeInParam("@starttime", DbType.DateTime, 8, DateTime.Parse(starttime)),
+                                        DbHelper.MakeInParam("@endtime", DbType.DateTime, 8, DateTime.Parse(endtime))
                                     };
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "advertisements] SET [available]=@available,[type]=@type, [displayorder]=@displayorder,[title]=@title,[targets]=@targets,[parameters]=@parameters,[code]=@code,[starttime]=@starttime,[endtime]=@endtime WHERE [advid]=@aid";
 
@@ -1280,12 +1281,12 @@ namespace Discuz.Data.Sqlite
         public void BuyTopic(int uid, int tid, int posterid, int price, float netamount, int creditsTrans)
         {
             DbParameter[] parms = {
-									   DbHelper.MakeInParam("@uid",(DbType)SqlDbType.Int,4,uid),
-									   DbHelper.MakeInParam("@tid",(DbType)SqlDbType.Int,4,tid),
-									   DbHelper.MakeInParam("@authorid",(DbType)SqlDbType.Int,4,posterid),
-									   DbHelper.MakeInParam("@buydate",(DbType)SqlDbType.DateTime,4,DateTime.Now),
-									   DbHelper.MakeInParam("@amount",(DbType)SqlDbType.Int,4,price),
-									   DbHelper.MakeInParam("@netamount",(DbType)SqlDbType.Float,8,netamount)
+									   DbHelper.MakeInParam("@uid",DbType.Int32,4,uid),
+									   DbHelper.MakeInParam("@tid",DbType.Int32,4,tid),
+									   DbHelper.MakeInParam("@authorid",DbType.Int32,4,posterid),
+									   DbHelper.MakeInParam("@buydate",DbType.DateTime,4,DateTime.Now),
+									   DbHelper.MakeInParam("@amount",DbType.Int32,4,price),
+									   DbHelper.MakeInParam("@netamount",DbType.Single,8,netamount)
 								   };
 
             DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "users] SET [extcredits" + creditsTrans + "] = [extcredits" + creditsTrans + "] - " + price.ToString() + " WHERE [uid] = @uid", parms);
@@ -1295,12 +1296,12 @@ namespace Discuz.Data.Sqlite
         public int AddPaymentLog(int uid, int tid, int posterid, int price, float netamount)
         {
             DbParameter[] parms = {
-									   DbHelper.MakeInParam("@uid",(DbType)SqlDbType.Int,4,uid),
-									   DbHelper.MakeInParam("@tid",(DbType)SqlDbType.Int,4,tid),
-									   DbHelper.MakeInParam("@authorid",(DbType)SqlDbType.Int,4,posterid),
-									   DbHelper.MakeInParam("@buydate",(DbType)SqlDbType.DateTime,4,DateTime.Now),
-									   DbHelper.MakeInParam("@amount",(DbType)SqlDbType.Int,4,price),
-									   DbHelper.MakeInParam("@netamount",(DbType)SqlDbType.Float,8,netamount)
+									   DbHelper.MakeInParam("@uid",DbType.Int32,4,uid),
+									   DbHelper.MakeInParam("@tid",DbType.Int32,4,tid),
+									   DbHelper.MakeInParam("@authorid",DbType.Int32,4,posterid),
+									   DbHelper.MakeInParam("@buydate",DbType.DateTime,4,DateTime.Now),
+									   DbHelper.MakeInParam("@amount",DbType.Int32,4,price),
+									   DbHelper.MakeInParam("@netamount",DbType.Single,8,netamount)
 								   };
             return DbHelper.ExecuteNonQuery(CommandType.Text, "INSERT INTO [" + BaseConfigs.GetTablePrefix + "paymentlog] ([uid],[tid],[authorid],[buydate],[amount],[netamount]) VALUES(@uid,@tid,@authorid,@buydate,@amount,@netamount)", parms);
         }
@@ -1314,8 +1315,8 @@ namespace Discuz.Data.Sqlite
         public bool IsBuyer(int tid, int uid)
         {
             DbParameter[] parms = {
-									   DbHelper.MakeInParam("@uid",(DbType)SqlDbType.Int,4,uid),
-									   DbHelper.MakeInParam("@tid",(DbType)SqlDbType.Int,4,tid)
+									   DbHelper.MakeInParam("@uid",DbType.Int32,4,uid),
+									   DbHelper.MakeInParam("@tid",DbType.Int32,4,tid)
 								   };
             return Utils.StrToInt(DbHelper.ExecuteScalar(CommandType.Text, "SELECT [id] FROM [" + BaseConfigs.GetTablePrefix + "paymentlog] WHERE [tid] = @tid AND [uid]=@uid", parms), 0) > 0;
         }
@@ -1419,11 +1420,11 @@ namespace Discuz.Data.Sqlite
         public void AddSmiles(int id, int displayorder, int type, string code, string url)
         {
             DbParameter[] parms = {
-                                        DbHelper.MakeInParam("@id", (DbType)SqlDbType.Int, 4, id),
-                                        DbHelper.MakeInParam("@displayorder", (DbType)SqlDbType.Int, 4, displayorder),
-                                        DbHelper.MakeInParam("@type", (DbType)SqlDbType.Int, 4, type),
-                                        DbHelper.MakeInParam("@code", (DbType)SqlDbType.NVarChar, 30, code),
-                                        DbHelper.MakeInParam("@url", (DbType)SqlDbType.VarChar, 60, url)
+                                        DbHelper.MakeInParam("@id", DbType.Int32, 4, id),
+                                        DbHelper.MakeInParam("@displayorder", DbType.Int32, 4, displayorder),
+                                        DbHelper.MakeInParam("@type", DbType.Int32, 4, type),
+                                        DbHelper.MakeInParam("@code", DbType.String, 30, code),
+                                        DbHelper.MakeInParam("@url", DbType.AnsiString, 60, url)
                                     };
 
 
@@ -1451,11 +1452,11 @@ namespace Discuz.Data.Sqlite
         public int UpdateSmilies(int id, int displayorder, int type, string code, string url)
         {
             DbParameter[] parms = { 
-                                        DbHelper.MakeInParam("@id", (DbType)SqlDbType.Int, 4, id),
-                                        DbHelper.MakeInParam("@displayorder", (DbType)SqlDbType.Int, 4, displayorder),
-                                        DbHelper.MakeInParam("@type", (DbType)SqlDbType.Int, 4, type),
-                                        DbHelper.MakeInParam("@code", (DbType)SqlDbType.NVarChar, 30, code),
-                                        DbHelper.MakeInParam("@url", (DbType)SqlDbType.VarChar, 60, url)
+                                        DbHelper.MakeInParam("@id", DbType.Int32, 4, id),
+                                        DbHelper.MakeInParam("@displayorder", DbType.Int32, 4, displayorder),
+                                        DbHelper.MakeInParam("@type", DbType.Int32, 4, type),
+                                        DbHelper.MakeInParam("@code", DbType.String, 30, code),
+                                        DbHelper.MakeInParam("@url", DbType.AnsiString, 60, url)
                                     };
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "smilies] SET [displayorder]=@displayorder,[type]=@type,[code]=@code,[url]=@url Where [id]=@id";
 
@@ -1465,9 +1466,9 @@ namespace Discuz.Data.Sqlite
         public int UpdateSmiliesPart(string code, int displayorder, int id)
         {
             DbParameter[] parms = { 
-                                        DbHelper.MakeInParam("@id", (DbType)SqlDbType.Int, 4, id),
-                                        DbHelper.MakeInParam("@displayorder", (DbType)SqlDbType.Int, 4, displayorder),
-                                        DbHelper.MakeInParam("@code", (DbType)SqlDbType.NVarChar, 30, code)
+                                        DbHelper.MakeInParam("@id", DbType.Int32, 4, id),
+                                        DbHelper.MakeInParam("@displayorder", DbType.Int32, 4, displayorder),
+                                        DbHelper.MakeInParam("@code", DbType.String, 30, code)
                                     };
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "smilies] SET [code]=@code,[displayorder]=@displayorder WHERE [id]=@id";
             return DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
@@ -1490,7 +1491,7 @@ namespace Discuz.Data.Sqlite
 
         public DataTable GetSmiliesInfoByType(int type)
         {
-            DbParameter parm = DbHelper.MakeInParam("@type", (DbType)SqlDbType.Int, 4, type);
+            DbParameter parm = DbHelper.MakeInParam("@type", DbType.Int32, 4, type);
             string sql = "SELECT * FROM [" + BaseConfigs.GetTablePrefix + "smilies] WHERE [type]=@type";
             return DbHelper.ExecuteDataset(CommandType.Text, sql, parm).Tables[0];
         }
@@ -1568,7 +1569,8 @@ namespace Discuz.Data.Sqlite
         /// <returns>统计列</returns>
         public DataRow GetStatisticsRow()
         {
-            return DbHelper.ExecuteDataset(CommandType.Text, "SELECT TOP 1 * FROM [" + BaseConfigs.GetTablePrefix + "statistics]").Tables[0].Rows[0];
+            System.Diagnostics.Debug.WriteLine("GetStatisticsRow()");
+            return DbHelper.ExecuteDataset(CommandType.Text, string.Format("SELECT * FROM {0}statistics LIMIT 0,1", BaseConfigs.GetTablePrefix)).Tables[0].Rows[0];
         }
 
         /// <summary>
@@ -1577,15 +1579,15 @@ namespace Discuz.Data.Sqlite
         public void SaveStatisticsRow(DataRow dr)
         {
             DbParameter[] parms = {
-									   DbHelper.MakeInParam("@totaltopic", (DbType)SqlDbType.Int,4,Int32.Parse(dr["totaltopic"].ToString())),
-									   DbHelper.MakeInParam("@totalpost",(DbType)SqlDbType.Int,4,Int32.Parse(dr["totalpost"].ToString())),
-									   DbHelper.MakeInParam("@totalusers",(DbType)SqlDbType.Int,4,Int32.Parse(dr["totalusers"].ToString())),
-									   DbHelper.MakeInParam("@lastusername",(DbType)SqlDbType.NChar,20,dr["totalusers"].ToString()),
-									   DbHelper.MakeInParam("@lastuserid",(DbType)SqlDbType.Int,4,Int32.Parse(dr["highestonlineusercount"].ToString())),
-									   DbHelper.MakeInParam("@highestonlineusercount",(DbType)SqlDbType.Int,4,Int32.Parse(dr["highestonlineusercount"].ToString())),
-									   DbHelper.MakeInParam("@highestonlineusertime",(DbType)SqlDbType.SmallDateTime,4,DateTime.Parse(dr["highestonlineusertime"].ToString())),
-									   DbHelper.MakeInParam("@highestposts",(DbType)SqlDbType.Int,4,Int32.Parse(dr["highestposts"].ToString())),
-									   DbHelper.MakeInParam("@highestpostsdate",(DbType)SqlDbType.Char,10,dr["highestpostsdate"].ToString())
+									   DbHelper.MakeInParam("@totaltopic", DbType.Int32,4,Int32.Parse(dr["totaltopic"].ToString())),
+									   DbHelper.MakeInParam("@totalpost",DbType.Int32,4,Int32.Parse(dr["totalpost"].ToString())),
+									   DbHelper.MakeInParam("@totalusers",DbType.Int32,4,Int32.Parse(dr["totalusers"].ToString())),
+									   DbHelper.MakeInParam("@lastusername",DbType.AnsiString,20,dr["totalusers"].ToString()),
+									   DbHelper.MakeInParam("@lastuserid",DbType.Int32,4,Int32.Parse(dr["highestonlineusercount"].ToString())),
+									   DbHelper.MakeInParam("@highestonlineusercount",DbType.Int32,4,Int32.Parse(dr["highestonlineusercount"].ToString())),
+									   DbHelper.MakeInParam("@highestonlineusertime",DbType.DateTime,4,DateTime.Parse(dr["highestonlineusertime"].ToString())),
+									   DbHelper.MakeInParam("@highestposts",DbType.Int32,4,Int32.Parse(dr["highestposts"].ToString())),
+									   DbHelper.MakeInParam("@highestpostsdate",DbType.AnsiString,10,dr["highestpostsdate"].ToString())
 			};
             DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "statistics] SET [totaltopic]=@totaltopic,[totalpost]=@totalpost, [totalusers]=@totalusers, [lastusername]=@lastusername, [lastuserid]=@lastuserid, [highestonlineusercount]=@highestonlineusercount, [highestonlineusertime]=@highestonlineusertime, [highestposts]=@highestposts, [highestpostsdate]=@highestpostsdate", parms);
         }
@@ -1636,7 +1638,7 @@ namespace Discuz.Data.Sqlite
 
         public IDataReader GetForumStatistics(int fid)
         {
-            DbParameter[] parms = { DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int,4, fid) };
+            DbParameter[] parms = { DbHelper.MakeInParam("@fid", DbType.Int32,4, fid) };
             return DbHelper.ExecuteReader(CommandType.Text, string.Format("SELECT SUM([topics]) AS [topiccount],SUM([posts]) AS [postcount],SUM([todayposts])-(SELECT SUM([todayposts]) FROM [{0}forums] WHERE [lastpost] < CONVERT(CHAR(12),GETDATE(),101) AND [layer]=1 AND [fid] = @fid) AS [todaypostcount] FROM [{0}forums] WHERE [fid] = @fid AND [layer]=1", BaseConfigs.GetTablePrefix), parms);
         }
 
@@ -1699,26 +1701,26 @@ namespace Discuz.Data.Sqlite
 
         public DataTable GetPost(string posttablename, int pid)
         {
-            DbParameter parm = DbHelper.MakeInParam("@pid", (DbType)SqlDbType.Int, 4, pid);
+            DbParameter parm = DbHelper.MakeInParam("@pid", DbType.Int32, 4, pid);
             return DbHelper.ExecuteDataset(CommandType.Text, "SELECT TOP 1 *  FROM [" + posttablename + "] WHERE [pid]=@pid", parm).Tables[0];
         }
 
         public DataTable GetMainPostByTid(string posttablename, int tid)
         {
-            DbParameter parm = DbHelper.MakeInParam("@tid", (DbType)SqlDbType.Int, 4, tid);
+            DbParameter parm = DbHelper.MakeInParam("@tid", DbType.Int32, 4, tid);
             return DbHelper.ExecuteDataset(CommandType.Text, "SELECT TOP 1 * FROM [" + posttablename + "] WHERE [layer]=0  AND [tid]=@tid", parm).Tables[0];
         }
 
         public DataTable GetAttachmentsByPid(int pid)
         {
-            DbParameter parm = DbHelper.MakeInParam("@pid", (DbType)SqlDbType.Int, 4, pid);
+            DbParameter parm = DbHelper.MakeInParam("@pid", DbType.Int32, 4, pid);
             return DbHelper.ExecuteDataset(CommandType.Text, "SELECT [aid], [tid], [pid], [postdatetime], [readperm], [filename], [description], [filetype], [filesize], [attachment], [downloads] FROM [" + BaseConfigs.GetTablePrefix + "attachments] WHERE [pid]=@pid", parm).Tables[0];
         }
 
         public DataTable GetAdvertisement(int aid)
         {
             //此函数放在Advs.cs文件中较好
-            DbParameter parm = DbHelper.MakeInParam("@aid", (DbType)SqlDbType.Int, 4, aid);
+            DbParameter parm = DbHelper.MakeInParam("@aid", DbType.Int32, 4, aid);
             return DbHelper.ExecuteDataset(CommandType.Text, "SELECT * FROM [" + BaseConfigs.GetTablePrefix + "advertisements] WHERE [advid]=@aid", parm).Tables[0];
         }
 
@@ -2458,9 +2460,9 @@ namespace Discuz.Data.Sqlite
             }
 
             DbParameter[] prams2 = {
-										DbHelper.MakeInParam("@searchstring",(DbType)SqlDbType.VarChar,255, sql),
-										DbHelper.MakeInParam("@uid",(DbType)SqlDbType.Int,4,userid),
-										DbHelper.MakeInParam("@groupid",(DbType)SqlDbType.Int,4,usergroupid)
+										DbHelper.MakeInParam("@searchstring",DbType.AnsiString,255, sql),
+										DbHelper.MakeInParam("@uid",DbType.Int32,4,userid),
+										DbHelper.MakeInParam("@groupid",DbType.Int32,4,usergroupid)
 									};
             int searchid = Utils.StrToInt(DbHelper.ExecuteScalar(CommandType.Text, string.Format(@"SELECT TOP 1 [searchid] FROM [{0}searchcaches] WHERE [searchstring]=@searchstring AND [groupid]=@groupid", BaseConfigs.GetTablePrefix), prams2), -1);
 
@@ -2876,8 +2878,8 @@ namespace Discuz.Data.Sqlite
         public bool IsExistSmilieCode(string code, int currentid)
         {
             DbParameter[] parms = {
-										DbHelper.MakeInParam("@code",(DbType)SqlDbType.NVarChar, 30, code),
-										DbHelper.MakeInParam("@currentid",(DbType)SqlDbType.Int, 4, currentid)
+										DbHelper.MakeInParam("@code",DbType.String, 30, code),
+										DbHelper.MakeInParam("@currentid",DbType.Int32, 4, currentid)
 									};
             string sql = "SELECT [id] FROM [" + BaseConfigs.GetTablePrefix + "smilies] WHERE [code]=@code AND [id]<>@currentid";
             return DbHelper.ExecuteDataset(CommandType.Text, sql, parms).Tables[0].Rows.Count != 0;
@@ -3065,7 +3067,7 @@ namespace Discuz.Data.Sqlite
         {
             //string sql = string.Format("SELECT [{0}tags].* FROM [{0}tags], [{0}topictags] WHERE [{0}topictags].[tagid] = [{0}tags].[tagid] AND [{0}topictags].[tid] = @topicid ORDER BY [orderid]", BaseConfigs.GetTablePrefix);
 
-            DbParameter parm = DbHelper.MakeInParam("@topicid", (DbType)SqlDbType.Int, 4, topicid);
+            DbParameter parm = DbHelper.MakeInParam("@topicid", DbType.Int32, 4, topicid);
 
             return DbHelper.ExecuteReader(CommandType.StoredProcedure, string.Format("{0}gettopictags", BaseConfigs.GetTablePrefix), parm);
         }
@@ -3073,7 +3075,7 @@ namespace Discuz.Data.Sqlite
         public IDataReader GetTagInfo(int tagid)
         {
             string sql = string.Format("SELECT * FROM [{0}tags] WHERE [tagid]=@tagid", BaseConfigs.GetTablePrefix);
-            DbParameter parm = DbHelper.MakeInParam("@tagid", (DbType)SqlDbType.Int, 4, tagid);
+            DbParameter parm = DbHelper.MakeInParam("@tagid", DbType.Int32, 4, tagid);
 
             return DbHelper.ExecuteReader(CommandType.Text, sql, parm);
         }
@@ -3083,9 +3085,9 @@ namespace Discuz.Data.Sqlite
             string sql = string.Format("{0}setlastexecutescheduledeventdatetime", BaseConfigs.GetTablePrefix);
 
             DbParameter[] parms = {
-                DbHelper.MakeInParam("@key", (DbType)SqlDbType.VarChar, 100, key),
-                DbHelper.MakeInParam("@servername", (DbType)SqlDbType.VarChar, 100, servername),
-                DbHelper.MakeInParam("@lastexecuted", (DbType)SqlDbType.DateTime, 8, lastexecuted)
+                DbHelper.MakeInParam("@key", DbType.AnsiString, 100, key),
+                DbHelper.MakeInParam("@servername", DbType.AnsiString, 100, servername),
+                DbHelper.MakeInParam("@lastexecuted", DbType.DateTime, 8, lastexecuted)
             };
 
             DbHelper.ExecuteNonQuery(CommandType.StoredProcedure, sql, parms);
@@ -3096,9 +3098,9 @@ namespace Discuz.Data.Sqlite
             string sql = string.Format("{0}getlastexecutescheduledeventdatetime", BaseConfigs.GetTablePrefix);
 
             DbParameter[] parms = {
-                DbHelper.MakeInParam("@key", (DbType)SqlDbType.VarChar, 100, key),
-                DbHelper.MakeInParam("@servername", (DbType)SqlDbType.VarChar, 100, servername),
-                DbHelper.MakeOutParam("@lastexecuted", (DbType)SqlDbType.DateTime, 8)
+                DbHelper.MakeInParam("@key", DbType.AnsiString, 100, key),
+                DbHelper.MakeInParam("@servername", DbType.AnsiString, 100, servername),
+                DbHelper.MakeOutParam("@lastexecuted", DbType.DateTime, 8)
             };
 
             DbHelper.ExecuteNonQuery(CommandType.StoredProcedure, sql, parms);
@@ -3109,9 +3111,9 @@ namespace Discuz.Data.Sqlite
         public void UpdateStats(string type, string variable, int count)
         {
             DbParameter[] parms = {
-                DbHelper.MakeInParam("@type", (DbType)SqlDbType.Char, 10, type),
-                DbHelper.MakeInParam("@variable", (DbType)SqlDbType.Char, 20, variable),
-                DbHelper.MakeInParam("@count", (DbType)SqlDbType.Int, 4, count)
+                DbHelper.MakeInParam("@type", DbType.AnsiString, 10, type),
+                DbHelper.MakeInParam("@variable", DbType.AnsiString, 20, variable),
+                DbHelper.MakeInParam("@count", DbType.Int32, 4, count)
             };
             string commandText = string.Format("UPDATE [{0}stats] SET [count]=[count]+@count WHERE [type]=@type AND [variable]=@variable", BaseConfigs.GetTablePrefix);
             int lines = DbHelper.ExecuteNonQuery(CommandType.Text, commandText, parms);
@@ -3129,9 +3131,9 @@ namespace Discuz.Data.Sqlite
         public void UpdateStatVars(string type, string variable, string value)
         {
             DbParameter[] parms = {
-                DbHelper.MakeInParam("@type", (DbType)SqlDbType.Char, 20, type),
-                DbHelper.MakeInParam("@variable", (DbType)SqlDbType.Char, 20, variable),
-                DbHelper.MakeInParam("@value", (DbType)SqlDbType.Text, 0, value)
+                DbHelper.MakeInParam("@type", DbType.AnsiString, 20, type),
+                DbHelper.MakeInParam("@variable", DbType.AnsiString, 20, variable),
+                DbHelper.MakeInParam("@value", DbType.String, 0, value)
             };
             string commandText = string.Format("UPDATE [{0}statvars] SET [value]=@value WHERE [type]=@type AND [variable]=@variable", BaseConfigs.GetTablePrefix);
             int lines = DbHelper.ExecuteNonQuery(CommandType.Text, commandText, parms);
@@ -3156,14 +3158,14 @@ namespace Discuz.Data.Sqlite
 
         public IDataReader GetStatsByType(string type)
         {
-            DbParameter parm = DbHelper.MakeInParam("@type", (DbType)SqlDbType.Char, 10, type);
+            DbParameter parm = DbHelper.MakeInParam("@type", DbType.AnsiString, 10, type);
             string commandText = string.Format("SELECT [type], [variable], [count] FROM [{0}stats] WHERE [type]=@type ORDER BY [type],[variable]", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteReader(CommandType.Text, commandText);
         }
 
         public IDataReader GetStatVarsByType(string type)
         {
-            DbParameter parm = DbHelper.MakeInParam("@type", (DbType)SqlDbType.Char, 10, type);
+            DbParameter parm = DbHelper.MakeInParam("@type", DbType.AnsiString, 10, type);
             string commandText = string.Format("SELECT [type], [variable], [value] FROM [{0}statvars] WHERE [type]=@type ORDER BY [type],[variable]", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteReader(CommandType.Text, commandText);
         }
@@ -3383,14 +3385,14 @@ namespace Discuz.Data.Sqlite
 
         public IDataReader GetNoticeByUid(int uid)
         {
-            return DbHelper.ExecuteReader(CommandType.Text, "SELECT * FROM [" + BaseConfigs.GetTablePrefix + "notices] WHERE [uid] = @uid ORDER BY [postdatetime] DESC", DbHelper.MakeInParam("@uid", (DbType)SqlDbType.Int, 4, uid));
+            return DbHelper.ExecuteReader(CommandType.Text, "SELECT * FROM [" + BaseConfigs.GetTablePrefix + "notices] WHERE [uid] = @uid ORDER BY [postdatetime] DESC", DbHelper.MakeInParam("@uid", DbType.Int32, 4, uid));
         }
 
         public IDataReader GetNoticeByUid(int uid, Noticetype noticetype)
         {
             DbParameter[] parms = { 
-                                        DbHelper.MakeInParam("@uid", (DbType)SqlDbType.Int, 4, uid),
-                                        DbHelper.MakeInParam("@type", (DbType)SqlDbType.Int, 4, noticetype),
+                                        DbHelper.MakeInParam("@uid", DbType.Int32, 4, uid),
+                                        DbHelper.MakeInParam("@type", DbType.Int32, 4, noticetype),
                                   };
 
             return DbHelper.ExecuteReader(CommandType.Text, "SELECT * FROM [" + BaseConfigs.GetTablePrefix + "notices] WHERE [uid] = @uid AND [type] = @type ORDER BY [postdatetime] DESC", parms);
@@ -3424,7 +3426,7 @@ namespace Discuz.Data.Sqlite
 
         public IDataReader GetNoticeByNid(int nid)
         {
-            return DbHelper.ExecuteReader(CommandType.Text, "SELECT * FROM [" + BaseConfigs.GetTablePrefix + "notices] WHERE [nid] = @nid ORDER BY [postdatetime] DESC", DbHelper.MakeInParam("@nid", (DbType)SqlDbType.Int, 4, nid));
+            return DbHelper.ExecuteReader(CommandType.Text, "SELECT * FROM [" + BaseConfigs.GetTablePrefix + "notices] WHERE [nid] = @nid ORDER BY [postdatetime] DESC", DbHelper.MakeInParam("@nid", DbType.Int32, 4, nid));
         }
 
         public int GetNoticeCountByUid(int uid, Noticetype noticetype)
@@ -3434,19 +3436,19 @@ namespace Discuz.Data.Sqlite
 
         public int GetNoticeNewCountByUid(int uid)
         {
-            return Utils.StrToInt(DbHelper.ExecuteScalar(CommandType.Text, string.Format("SELECT COUNT(nid) FROM [" + BaseConfigs.GetTablePrefix + "notices] WHERE [uid] = {0} WHERE [new]=1",DbHelper.MakeInParam("@uid", (DbType)SqlDbType.Int, 4, uid))),0);
+            return Utils.StrToInt(DbHelper.ExecuteScalar(CommandType.Text, string.Format("SELECT COUNT(nid) FROM [" + BaseConfigs.GetTablePrefix + "notices] WHERE [uid] = {0} WHERE [new]=1",DbHelper.MakeInParam("@uid", DbType.Int32, 4, uid))),0);
         }
 
         public int CreateNoticeInfo(Noticeinfo noticeinfo)
         {
             DbParameter[] parms = { 
-                                        DbHelper.MakeInParam("@uid", (DbType)SqlDbType.Int, 4, noticeinfo.Uid),
-                                        DbHelper.MakeInParam("@type", (DbType)SqlDbType.Int, 4, noticeinfo.Type),
-                                        DbHelper.MakeInParam("@new", (DbType)SqlDbType.Int, 4, noticeinfo.New),
-                                        DbHelper.MakeInParam("@posterid", (DbType)SqlDbType.Int, 4, noticeinfo.Posterid),
-                                        DbHelper.MakeInParam("@poster", (DbType)SqlDbType.NChar, 20, noticeinfo.Poster),
-                                        DbHelper.MakeInParam("@note", (DbType)SqlDbType.NText, 0, noticeinfo.Note),
-                                        DbHelper.MakeInParam("@postdatetime", (DbType)SqlDbType.DateTime, 8, noticeinfo.Postdatetime)
+                                        DbHelper.MakeInParam("@uid", DbType.Int32, 4, noticeinfo.Uid),
+                                        DbHelper.MakeInParam("@type", DbType.Int32, 4, noticeinfo.Type),
+                                        DbHelper.MakeInParam("@new", DbType.Int32, 4, noticeinfo.New),
+                                        DbHelper.MakeInParam("@posterid", DbType.Int32, 4, noticeinfo.Posterid),
+                                        DbHelper.MakeInParam("@poster", DbType.AnsiString, 20, noticeinfo.Poster),
+                                        DbHelper.MakeInParam("@note", DbType.String, 0, noticeinfo.Note),
+                                        DbHelper.MakeInParam("@postdatetime", DbType.DateTime, 8, noticeinfo.Postdatetime)
                                     };
             return Utils.StrToInt(DbHelper.ExecuteScalar(CommandType.Text, "INSERT INTO [" + BaseConfigs.GetTablePrefix + "notices] ([uid], [type], [new], [posterid], [poster], [note], [postdatetime]) VALUES (@uid, @type, @new, @posterid, @poster, @note, @postdatetime);SELECT SCOPE_IDENTITY()  AS 'nid'", parms), -1);
         }
@@ -3454,33 +3456,33 @@ namespace Discuz.Data.Sqlite
         public bool UpdateNoticeInfo(Noticeinfo noticeinfo)
         {
             DbParameter[] parms = { 
-                                        DbHelper.MakeInParam("@nid", (DbType)SqlDbType.Int, 4, noticeinfo.Nid),
-                                        DbHelper.MakeInParam("@uid", (DbType)SqlDbType.Int, 4, noticeinfo.Uid),
-                                        DbHelper.MakeInParam("@type", (DbType)SqlDbType.Int, 4, noticeinfo.Type),
-                                        DbHelper.MakeInParam("@new", (DbType)SqlDbType.Int, 4, noticeinfo.New),
-                                        DbHelper.MakeInParam("@posterid", (DbType)SqlDbType.Int, 4, noticeinfo.Posterid),
-                                        DbHelper.MakeInParam("@poster", (DbType)SqlDbType.NChar, 20, noticeinfo.Poster),
-                                        DbHelper.MakeInParam("@note", (DbType)SqlDbType.NText, 0, noticeinfo.Note),
-                                        DbHelper.MakeInParam("@postdatetime", (DbType)SqlDbType.DateTime, 8, noticeinfo.Postdatetime)
+                                        DbHelper.MakeInParam("@nid", DbType.Int32, 4, noticeinfo.Nid),
+                                        DbHelper.MakeInParam("@uid", DbType.Int32, 4, noticeinfo.Uid),
+                                        DbHelper.MakeInParam("@type", DbType.Int32, 4, noticeinfo.Type),
+                                        DbHelper.MakeInParam("@new", DbType.Int32, 4, noticeinfo.New),
+                                        DbHelper.MakeInParam("@posterid", DbType.Int32, 4, noticeinfo.Posterid),
+                                        DbHelper.MakeInParam("@poster", DbType.AnsiString, 20, noticeinfo.Poster),
+                                        DbHelper.MakeInParam("@note", DbType.String, 0, noticeinfo.Note),
+                                        DbHelper.MakeInParam("@postdatetime", DbType.DateTime, 8, noticeinfo.Postdatetime)
                                     };
              return DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "notices] SET  [uid] = @uid, [type] = @type, [new] = @new, [posterid] = @posterid, [poster] = @poster, [note] = @note, [postdatetime] = @postdatetime  WHERE [nid] = @nid", parms) > 0;
         }
 
         public bool DeleteNoticeByNid(int nid)
         {
-            return DbHelper.ExecuteNonQuery(CommandType.Text, "DELETE FROM [" + BaseConfigs.GetTablePrefix + "notices] WHERE [nid] = @nid", DbHelper.MakeInParam("@nid", (DbType)SqlDbType.Int, 4, nid)) > 0;
+            return DbHelper.ExecuteNonQuery(CommandType.Text, "DELETE FROM [" + BaseConfigs.GetTablePrefix + "notices] WHERE [nid] = @nid", DbHelper.MakeInParam("@nid", DbType.Int32, 4, nid)) > 0;
         }
 
         public bool DeleteNoticeByUid(int uid)
         {
-            return DbHelper.ExecuteNonQuery(CommandType.Text, "DELETE FROM [" + BaseConfigs.GetTablePrefix + "notices] WHERE [uid] = @uid", DbHelper.MakeInParam("@uid", (DbType)SqlDbType.Int, 4, uid)) > 0;
+            return DbHelper.ExecuteNonQuery(CommandType.Text, "DELETE FROM [" + BaseConfigs.GetTablePrefix + "notices] WHERE [uid] = @uid", DbHelper.MakeInParam("@uid", DbType.Int32, 4, uid)) > 0;
         }
 
 
         public int GetAnnouncementPosterid(int announcementid)
         {
             DbParameter[] parameter = { 
-                                        DbHelper.MakeInParam("@id",(DbType)SqlDbType.Int, 4,announcementid)
+                                        DbHelper.MakeInParam("@id",DbType.Int32, 4,announcementid)
                                       };
             return Convert.ToInt32(DbHelper.ExecuteScalarToStr(CommandType.Text, "SELECT [posterid] FROM [" + BaseConfigs.GetTablePrefix + "announcements] WHERE id=@id",parameter));
         }
@@ -3494,8 +3496,8 @@ namespace Discuz.Data.Sqlite
         public void UpdateNoticeNewByUid(int uid, int newtype)
         {
             DbParameter[] parms = {                                    
-                                    DbHelper.MakeInParam("@new", (DbType)SqlDbType.Int, 4, newtype),
-                                    DbHelper.MakeInParam("@uid", (DbType)SqlDbType.Int, 4, uid)
+                                    DbHelper.MakeInParam("@new", DbType.Int32, 4, newtype),
+                                    DbHelper.MakeInParam("@uid", DbType.Int32, 4, uid)
                                 };
             DbHelper.ExecuteNonQuery(CommandType.Text, "Update [" + BaseConfigs.GetTablePrefix + "notices] SET [new] = @new WHERE [uid] = @uid", parms);
         }
@@ -3513,13 +3515,13 @@ namespace Discuz.Data.Sqlite
         public void AddBannedIp(int ip1, int ip2, int ip3, int ip4, string username, string deteline, string expiration)
         {
             DbParameter[] parameters = {
-                                         DbHelper.MakeInParam("@ip1",(DbType)SqlDbType.Int, 4, ip1),
-                                         DbHelper.MakeInParam("@ip2",(DbType)SqlDbType.Int, 4, ip2),
-                                         DbHelper.MakeInParam("@ip3",(DbType)SqlDbType.Int, 4, ip3),
-                                         DbHelper.MakeInParam("@ip4",(DbType)SqlDbType.Int, 4, ip4),
-                                         DbHelper.MakeInParam("@admin",(DbType)SqlDbType.NVarChar,50,username),
-                                         DbHelper.MakeInParam("@dateline",(DbType)SqlDbType.NVarChar,50,deteline),
-                                         DbHelper.MakeInParam("@expiration",(DbType)SqlDbType.NVarChar,50,expiration)
+                                         DbHelper.MakeInParam("@ip1",DbType.Int32, 4, ip1),
+                                         DbHelper.MakeInParam("@ip2",DbType.Int32, 4, ip2),
+                                         DbHelper.MakeInParam("@ip3",DbType.Int32, 4, ip3),
+                                         DbHelper.MakeInParam("@ip4",DbType.Int32, 4, ip4),
+                                         DbHelper.MakeInParam("@admin",DbType.String,50,username),
+                                         DbHelper.MakeInParam("@dateline",DbType.String,50,deteline),
+                                         DbHelper.MakeInParam("@expiration",DbType.String,50,expiration)
                                        };
 
             string sql = "INSERT INTO [" + BaseConfigs.GetTablePrefix + "banned](ip1,ip2,ip3,ip4,admin,dateline,expiration) VALUES(@ip1,@ip2,@ip3,@ip4,@admin,@dateline,@expiration)";
@@ -3552,8 +3554,8 @@ namespace Discuz.Data.Sqlite
         public int UpdateBanIpExpiration(int id, string endtime)
         {
             DbParameter[] parameters = {
-                                         DbHelper.MakeInParam("@id",(DbType)SqlDbType.Int, 4, id),
-                                         DbHelper.MakeInParam("@expiration",(DbType)SqlDbType.DateTime, 8, DateTime.Parse(endtime)),
+                                         DbHelper.MakeInParam("@id",DbType.Int32, 4, id),
+                                         DbHelper.MakeInParam("@expiration",DbType.DateTime, 8, DateTime.Parse(endtime)),
                                        };
 
             string sqlstring = "UPDATE [" + BaseConfigs.GetTablePrefix + "banned] SET [expiration] = @expiration WHERE [id]=@id";
@@ -3576,8 +3578,8 @@ namespace Discuz.Data.Sqlite
         public int UpdateDisplayOrder(int displayorder,int aid)
         {
             DbParameter[] parameters = {
-                                         DbHelper.MakeInParam("@displayorder",(DbType)SqlDbType.Int, 4, displayorder),
-                                         DbHelper.MakeInParam("@aid",(DbType)SqlDbType.Int, 4, aid),
+                                         DbHelper.MakeInParam("@displayorder",DbType.Int32, 4, displayorder),
+                                         DbHelper.MakeInParam("@aid",DbType.Int32, 4, aid),
                                        };
 
             string sql = "UPDATE  [" + BaseConfigs.GetTablePrefix + "announcements] set [displayorder]=@displayorder WHERE [id]=@aid";
@@ -3595,14 +3597,14 @@ namespace Discuz.Data.Sqlite
         public void InsertNavigation(NavInfo nav)
         {
             DbParameter[] param = {
-                                         DbHelper.MakeInParam("@parentid",(DbType)SqlDbType.Int,4,nav.Parentid),
-                                         DbHelper.MakeInParam("@name",(DbType)SqlDbType.NChar, 50, nav.Name),
-                                         DbHelper.MakeInParam("@title",(DbType)SqlDbType.NChar, 255, nav.Title),
-                                         DbHelper.MakeInParam("@url",(DbType)SqlDbType.Char, 255, nav.Url),
-                                         DbHelper.MakeInParam("@target",(DbType)SqlDbType.TinyInt, 1, nav.Target),
-                                         DbHelper.MakeInParam("@available",(DbType)SqlDbType.TinyInt,1,nav.Available),
-                                         DbHelper.MakeInParam("@displayorder",(DbType)SqlDbType.SmallInt,2,nav.Displayorder),
-                                         DbHelper.MakeInParam("@level",(DbType)SqlDbType.TinyInt,1,nav.Level)
+                                         DbHelper.MakeInParam("@parentid",DbType.Int32,4,nav.Parentid),
+                                         DbHelper.MakeInParam("@name",DbType.AnsiString, 50, nav.Name),
+                                         DbHelper.MakeInParam("@title",DbType.AnsiString, 255, nav.Title),
+                                         DbHelper.MakeInParam("@url",DbType.AnsiString, 255, nav.Url),
+                                         DbHelper.MakeInParam("@target",DbType.Byte, 1, nav.Target),
+                                         DbHelper.MakeInParam("@available",DbType.Byte,1,nav.Available),
+                                         DbHelper.MakeInParam("@displayorder",DbType.Int16,2,nav.Displayorder),
+                                         DbHelper.MakeInParam("@level",DbType.Byte,1,nav.Level)
                                        };
             string sql = String.Format("INSERT INTO [{0}navs] ([parentid],[name],[title],[url],[target],[type],[available],[displayorder],[level]) VALUES(@parentid,@name,@title,@url,@target,1,@available,@displayorder,@level)", BaseConfigs.GetTablePrefix);
             DbHelper.ExecuteNonQuery(CommandType.Text, sql, param);
@@ -3611,14 +3613,14 @@ namespace Discuz.Data.Sqlite
         public void UpdateNavigation(NavInfo nav)
         {
             DbParameter[] param = {
-                                         DbHelper.MakeInParam("@name",(DbType)SqlDbType.NChar, 50, nav.Name),
-                                         DbHelper.MakeInParam("@title",(DbType)SqlDbType.NChar, 255, nav.Title),
-                                         DbHelper.MakeInParam("@url",(DbType)SqlDbType.Char, 255, nav.Url),
-                                         DbHelper.MakeInParam("@target",(DbType)SqlDbType.TinyInt, 1, nav.Target),
-                                         DbHelper.MakeInParam("@available",(DbType)SqlDbType.TinyInt,1,nav.Available),
-                                         DbHelper.MakeInParam("@displayorder",(DbType)SqlDbType.SmallInt,2,nav.Displayorder),
-                                         DbHelper.MakeInParam("@level",(DbType)SqlDbType.TinyInt,1,nav.Level),
-                                         DbHelper.MakeInParam("@id",(DbType)SqlDbType.Int,4,nav.Id)
+                                         DbHelper.MakeInParam("@name",DbType.AnsiString, 50, nav.Name),
+                                         DbHelper.MakeInParam("@title",DbType.AnsiString, 255, nav.Title),
+                                         DbHelper.MakeInParam("@url",DbType.AnsiString, 255, nav.Url),
+                                         DbHelper.MakeInParam("@target",DbType.Byte, 1, nav.Target),
+                                         DbHelper.MakeInParam("@available",DbType.Byte,1,nav.Available),
+                                         DbHelper.MakeInParam("@displayorder",DbType.Int16,2,nav.Displayorder),
+                                         DbHelper.MakeInParam("@level",DbType.Byte,1,nav.Level),
+                                         DbHelper.MakeInParam("@id",DbType.Int32,4,nav.Id)
                                        };
             string sql = String.Format("UPDATE [{0}navs] set [name]=@name,[title]=@title,[url]=@url,[target]=@target,[available]=@available,[displayorder]=@displayorder,[level]=@level WHERE id=@id", BaseConfigs.GetTablePrefix);
             DbHelper.ExecuteNonQuery(CommandType.Text, sql, param);
@@ -3638,9 +3640,9 @@ namespace Discuz.Data.Sqlite
         public int GetNoticeCount(int userid, int state)
         {
             DbParameter[] parms = {
-									   DbHelper.MakeInParam("@userid",(DbType)SqlDbType.Int,4, userid),
-									   DbHelper.MakeInParam("@type",(DbType)SqlDbType.Int,4, -1),
-									   DbHelper.MakeInParam("@state",(DbType)SqlDbType.Int,4,state)
+									   DbHelper.MakeInParam("@userid",DbType.Int32,4, userid),
+									   DbHelper.MakeInParam("@type",DbType.Int32,4, -1),
+									   DbHelper.MakeInParam("@state",DbType.Int32,4,state)
 								   };
             return Utils.StrToInt(DbHelper.ExecuteScalar(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "getnoticecount", parms).ToString(), 0);
         }
@@ -3653,9 +3655,9 @@ namespace Discuz.Data.Sqlite
         public int ReNewNotice(int type, int uid)
         { 
             DbParameter[] parms = {
-						   DbHelper.MakeInParam("@type",(DbType)SqlDbType.Int, 4, type),
-                           DbHelper.MakeInParam("@date",(DbType)SqlDbType.DateTime, 4, DateTime.Now),
-						   DbHelper.MakeInParam("@uid",(DbType)SqlDbType.Int, 4, uid)
+						   DbHelper.MakeInParam("@type",DbType.Int32, 4, type),
+                           DbHelper.MakeInParam("@date",DbType.DateTime, 4, DateTime.Now),
+						   DbHelper.MakeInParam("@uid",DbType.Int32, 4, uid)
 					   };
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "notices] SET [new]=1,[postdatetime]=@date WHERE [type]=@type AND [uid]=@uid";
             int noticecount = DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
@@ -3673,13 +3675,13 @@ namespace Discuz.Data.Sqlite
         public int CreateAttachPaymetLog(AttachPaymentlogInfo attachPaymentLogInfo)
         {
             DbParameter[] parms = {
-						   DbHelper.MakeInParam("@uid",(DbType)SqlDbType.Int, 4, attachPaymentLogInfo.Uid),
-                           DbHelper.MakeInParam("@username",(DbType)SqlDbType.NChar, 20, attachPaymentLogInfo.UserName),
-                           DbHelper.MakeInParam("@postdatetime",(DbType)SqlDbType.DateTime, 8, attachPaymentLogInfo.PostDateTime),
-                           DbHelper.MakeInParam("@amount",(DbType)SqlDbType.Int, 4, attachPaymentLogInfo.Amount),
-                           DbHelper.MakeInParam("@netamount",(DbType)SqlDbType.Int, 4, attachPaymentLogInfo.NetAmount),
-                           DbHelper.MakeInParam("@aid",(DbType)SqlDbType.Int, 4, attachPaymentLogInfo.Aid),
-						   DbHelper.MakeInParam("@authorid",(DbType)SqlDbType.Int, 4, attachPaymentLogInfo.Authorid)
+						   DbHelper.MakeInParam("@uid",DbType.Int32, 4, attachPaymentLogInfo.Uid),
+                           DbHelper.MakeInParam("@username",DbType.AnsiString, 20, attachPaymentLogInfo.UserName),
+                           DbHelper.MakeInParam("@postdatetime",DbType.DateTime, 8, attachPaymentLogInfo.PostDateTime),
+                           DbHelper.MakeInParam("@amount",DbType.Int32, 4, attachPaymentLogInfo.Amount),
+                           DbHelper.MakeInParam("@netamount",DbType.Int32, 4, attachPaymentLogInfo.NetAmount),
+                           DbHelper.MakeInParam("@aid",DbType.Int32, 4, attachPaymentLogInfo.Aid),
+						   DbHelper.MakeInParam("@authorid",DbType.Int32, 4, attachPaymentLogInfo.Authorid)
 					   };
             string sql = "INSERT INTO [" + BaseConfigs.GetTablePrefix + "attachpaymentlog] ([uid],[postdatetime],[username],[amount],[netamount],[aid],[authorid]) VALUES (@uid,@postdatetime,@username,@amount,@netamount,@aid,@authorid);SELECT SCOPE_IDENTITY()";
 
@@ -3689,14 +3691,14 @@ namespace Discuz.Data.Sqlite
         public int UpdateAttachPaymetLog(AttachPaymentlogInfo attachPaymentLogInfo)
         {
             DbParameter[] parms = {
-                           DbHelper.MakeInParam("@id",(DbType)SqlDbType.Int, 4, attachPaymentLogInfo.Id),
-						   DbHelper.MakeInParam("@uid",(DbType)SqlDbType.Int, 4, attachPaymentLogInfo.Uid),
-                           DbHelper.MakeInParam("@username",(DbType)SqlDbType.NChar, 20, attachPaymentLogInfo.UserName),
-                           DbHelper.MakeInParam("@postdatetime",(DbType)SqlDbType.DateTime, 8, attachPaymentLogInfo.PostDateTime),
-                           DbHelper.MakeInParam("@amount",(DbType)SqlDbType.Int, 4, attachPaymentLogInfo.Amount),
-                           DbHelper.MakeInParam("@netamount",(DbType)SqlDbType.Int, 4, attachPaymentLogInfo.NetAmount),
-                           DbHelper.MakeInParam("@aid",(DbType)SqlDbType.Int, 4, attachPaymentLogInfo.Aid),
-						   DbHelper.MakeInParam("@authorid",(DbType)SqlDbType.Int, 4, attachPaymentLogInfo.Authorid)
+                           DbHelper.MakeInParam("@id",DbType.Int32, 4, attachPaymentLogInfo.Id),
+						   DbHelper.MakeInParam("@uid",DbType.Int32, 4, attachPaymentLogInfo.Uid),
+                           DbHelper.MakeInParam("@username",DbType.AnsiString, 20, attachPaymentLogInfo.UserName),
+                           DbHelper.MakeInParam("@postdatetime",DbType.DateTime, 8, attachPaymentLogInfo.PostDateTime),
+                           DbHelper.MakeInParam("@amount",DbType.Int32, 4, attachPaymentLogInfo.Amount),
+                           DbHelper.MakeInParam("@netamount",DbType.Int32, 4, attachPaymentLogInfo.NetAmount),
+                           DbHelper.MakeInParam("@aid",DbType.Int32, 4, attachPaymentLogInfo.Aid),
+						   DbHelper.MakeInParam("@authorid",DbType.Int32, 4, attachPaymentLogInfo.Authorid)
 					   };
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "attachpaymentlog] SET [uid]=@uid,[postdatetime]=@postdatetime,[username]=@username,[amount]=@amount,[netamount]=@netamount,[aid]=@aid,[authorid]=@authorid WHERE [id] = @id";
 
@@ -3705,14 +3707,14 @@ namespace Discuz.Data.Sqlite
 
         public IDataReader GetAttachPaymetLogByAid(int aid)
         {            
-            return DbHelper.ExecuteReader(CommandType.Text, "SELECT * [" + BaseConfigs.GetTablePrefix + "attachpaymentlog] WHERE [aid]=@aid", DbHelper.MakeInParam("@aid", (DbType)SqlDbType.Int, 4, aid));
+            return DbHelper.ExecuteReader(CommandType.Text, "SELECT * [" + BaseConfigs.GetTablePrefix + "attachpaymentlog] WHERE [aid]=@aid", DbHelper.MakeInParam("@aid", DbType.Int32, 4, aid));
         }
 
         public int IsBuyAttach(int userid, int aid)
         {
             DbParameter[] parms = {
-                           DbHelper.MakeInParam("@aid",(DbType)SqlDbType.Int, 4, aid),
-						   DbHelper.MakeInParam("@uid",(DbType)SqlDbType.Int, 4, userid)
+                           DbHelper.MakeInParam("@aid",DbType.Int32, 4, aid),
+						   DbHelper.MakeInParam("@uid",DbType.Int32, 4, userid)
 					   };
             return Utils.StrToInt(DbHelper.ExecuteScalar(CommandType.Text, "SELECT COUNT(1) FROM [" + BaseConfigs.GetTablePrefix + "attachpaymentlog] WHERE [aid]=@aid AND [uid] = @uid", parms), 0);
         }

@@ -55,11 +55,11 @@ namespace Discuz.Data.Sqlite
         {
             
             DbParameter[] parms = {
-                                        DbHelper.MakeInParam("@displayorder", (DbType)SqlDbType.Int, 4, displayorder),
-                                        DbHelper.MakeInParam("@name", (DbType)SqlDbType.NVarChar, 100, name),
-                                        DbHelper.MakeInParam("@url", (DbType)SqlDbType.NVarChar, 100, url),
-                                        DbHelper.MakeInParam("@note", (DbType)SqlDbType.NVarChar, 200, note),
-                                        DbHelper.MakeInParam("@logo", (DbType)SqlDbType.NVarChar, 100, logo)
+                                        DbHelper.MakeInParam("@displayorder", DbType.Int32, 4, displayorder),
+                                        DbHelper.MakeInParam("@name", DbType.String, 100, name),
+                                        DbHelper.MakeInParam("@url", DbType.String, 100, url),
+                                        DbHelper.MakeInParam("@note", DbType.String, 200, note),
+                                        DbHelper.MakeInParam("@logo", DbType.String, 100, logo)
                                     };
             string sql = "INSERT INTO [" + BaseConfigs.GetTablePrefix + "forumlinks] ([displayorder], [name],[url],[note],[logo]) VALUES (@displayorder,@name,@url,@note,@logo)";
             return DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
@@ -98,12 +98,12 @@ namespace Discuz.Data.Sqlite
         public int UpdateForumLink(int id, int displayorder, string name, string url, string note, string logo)
         {
             DbParameter[] parms = {
-                                        DbHelper.MakeInParam("@id", (DbType)SqlDbType.Int, 4, id),
-                                        DbHelper.MakeInParam("@displayorder", (DbType)SqlDbType.Int, 4, displayorder),
-                                        DbHelper.MakeInParam("@name", (DbType)SqlDbType.NVarChar, 100, name),
-                                        DbHelper.MakeInParam("@url", (DbType)SqlDbType.NVarChar, 100, url),
-                                        DbHelper.MakeInParam("@note", (DbType)SqlDbType.NVarChar, 200, note),
-                                        DbHelper.MakeInParam("@logo", (DbType)SqlDbType.NVarChar, 100, logo)
+                                        DbHelper.MakeInParam("@id", DbType.Int32, 4, id),
+                                        DbHelper.MakeInParam("@displayorder", DbType.Int32, 4, displayorder),
+                                        DbHelper.MakeInParam("@name", DbType.String, 100, name),
+                                        DbHelper.MakeInParam("@url", DbType.String, 100, url),
+                                        DbHelper.MakeInParam("@note", DbType.String, 200, note),
+                                        DbHelper.MakeInParam("@logo", DbType.String, 100, logo)
                                     };
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "forumlinks] SET [displayorder]=@displayorder,[name]=@name,[url]=@url,[note]=@note,[logo]=@logo WHERE [id]=@id";
             return DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
@@ -126,8 +126,9 @@ namespace Discuz.Data.Sqlite
         /// <returns></returns>
         public IDataReader GetForumIndexList()
         {
-            string commandText = string.Format("{0}getindexforumlist", BaseConfigs.GetTablePrefix);
-            return DbHelper.ExecuteReader(CommandType.StoredProcedure, commandText);
+            System.Diagnostics.Debug.WriteLine("GetForumIndexList()");
+            string commandText = string.Format("SELECT CASE WHEN (julianday('now','localtime')-julianday([lastpost],'localtime'))<600 THEN 'new' ELSE 'old' END AS [havenew],[{0}forums].*, [{0}forumfields].* FROM [{0}forums] LEFT JOIN [{0}forumfields] ON [{0}forums].[fid]=[{0}forumfields].[fid] WHERE [{0}forums].[parentid] NOT IN (SELECT [fid] FROM [{0}forums] WHERE [status] < 1 AND [layer] = 0) AND [{0}forums].[status] > 0 AND [layer] <= 1 ORDER BY [displayorder]", BaseConfigs.GetTablePrefix);
+            return DbHelper.ExecuteReader(CommandType.Text, commandText);
         }
 
         /// <summary>
@@ -148,7 +149,7 @@ namespace Discuz.Data.Sqlite
         public IDataReader GetSubForumReader(int fid)
         {
             DbParameter[] parms = {
-									   DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int,4, fid)
+									   DbHelper.MakeInParam("@fid", DbType.Int32,4, fid)
 								   };
 
             string commandText = string.Format("SELECT CASE WHEN DATEDIFF(n, [lastpost], GETDATE())<600 THEN 'new' ELSE 'old' END AS [havenew],[{0}forums].*, [{0}forumfields].* FROM [{0}forums] LEFT JOIN [{0}forumfields] ON [{0}forums].[fid]=[{0}forumfields].[fid] WHERE [parentid] = @fid AND [status] > 0 ORDER BY [displayorder]", BaseConfigs.GetTablePrefix);
@@ -163,7 +164,7 @@ namespace Discuz.Data.Sqlite
         public DataTable GetSubForumTable(int fid)
         {
             DbParameter[] parms = {
-									   DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int,4, fid)
+									   DbHelper.MakeInParam("@fid", DbType.Int32,4, fid)
 								   };
 
             string commandText = string.Format("SELECT CASE WHEN DATEDIFF(n, [lastpost], GETDATE())<600 THEN 'new' ELSE 'old' END AS [havenew],[{0}forums].*, [{0}forumfields].* FROM [{0}forums] LEFT JOIN [{0}forumfields] ON [{0}forums].[fid]=[{0}forumfields].[fid] WHERE [parentid] = @fid AND [status] > 0 ORDER BY [displayorder]", BaseConfigs.GetTablePrefix);
@@ -176,6 +177,7 @@ namespace Discuz.Data.Sqlite
         /// <returns></returns>
         public DataTable GetForumsTable()
         {
+            System.Diagnostics.Debug.WriteLine("GetForumsTable()");
             string commandText = string.Format("SELECT [{0}forums].*, [{0}forumfields].* FROM [{0}forums] LEFT JOIN [{0}forumfields] ON [{0}forums].[fid]=[{0}forumfields].[fid] ORDER BY [displayorder]", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteDataset(CommandType.Text, commandText).Tables[0];
         }
@@ -277,10 +279,10 @@ namespace Discuz.Data.Sqlite
         public int UpdateForum(int fid, string name, int subforumcount, int displayorder)
         {
             DbParameter[] parms = {
-                                        DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int, 4, fid),
-                                        DbHelper.MakeInParam("@name", (DbType)SqlDbType.NChar, 50, name),
-                                        DbHelper.MakeInParam("@subforumcount", (DbType)SqlDbType.Int, 4, subforumcount),
-                                        DbHelper.MakeInParam("@displayorder", (DbType)SqlDbType.Int, 4, displayorder) 
+                                        DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid),
+                                        DbHelper.MakeInParam("@name", DbType.AnsiString, 50, name),
+                                        DbHelper.MakeInParam("@subforumcount", DbType.Int32, 4, subforumcount),
+                                        DbHelper.MakeInParam("@displayorder", DbType.Int32, 4, displayorder) 
                                     };
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [name]=@name,[subforumcount]=@subforumcount ,[displayorder]=@displayorder WHERE [fid]=@fid";
             return DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
@@ -351,7 +353,7 @@ namespace Discuz.Data.Sqlite
         {
             DbParameter[] parms = 
 			{
-				DbHelper.MakeInParam("@fid",(DbType)SqlDbType.Int, 4, fid)
+				DbHelper.MakeInParam("@fid",DbType.Int32, 4, fid)
 			};
             string sql = string.Format("SELECT [{0}forums].*, [{0}forumfields].* FROM [{0}forums] LEFT JOIN [{0}forumfields] ON [{0}forums].[fid]=[{0}forumfields].[fid] WHERE [{0}forums].[fid]=@fid", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteDataset(CommandType.Text, sql, parms).Tables[0];
@@ -395,30 +397,30 @@ namespace Discuz.Data.Sqlite
                 try
                 {
                     DbParameter[] parms = {
-						DbHelper.MakeInParam("@name", (DbType)SqlDbType.NChar, 50, foruminfo.Name),
-						DbHelper.MakeInParam("@status", (DbType)SqlDbType.Int, 4, foruminfo.Status),
-						DbHelper.MakeInParam("@colcount", (DbType)SqlDbType.SmallInt, 4, foruminfo.Colcount),
-						DbHelper.MakeInParam("@templateid", (DbType)SqlDbType.SmallInt, 2, foruminfo.Templateid),
-						DbHelper.MakeInParam("@allowsmilies", (DbType)SqlDbType.Int, 4, foruminfo.Allowsmilies),
-						DbHelper.MakeInParam("@allowrss", (DbType)SqlDbType.Int, 6, foruminfo.Allowrss),
-						DbHelper.MakeInParam("@allowhtml", (DbType)SqlDbType.Int, 4, foruminfo.Allowhtml),
-						DbHelper.MakeInParam("@allowbbcode", (DbType)SqlDbType.Int, 4, foruminfo.Allowbbcode),
-						DbHelper.MakeInParam("@allowimgcode", (DbType)SqlDbType.Int, 4, foruminfo.Allowimgcode),
-						DbHelper.MakeInParam("@allowblog", (DbType)SqlDbType.Int, 4, foruminfo.Allowblog),
-						DbHelper.MakeInParam("@alloweditrules", (DbType)SqlDbType.Int, 4, foruminfo.Alloweditrules),
-						DbHelper.MakeInParam("@allowthumbnail", (DbType)SqlDbType.Int, 4, foruminfo.Allowthumbnail),
-                        DbHelper.MakeInParam("@allowtag",(DbType)SqlDbType.Int,4,foruminfo.Allowtag),
-                        DbHelper.MakeInParam("@istrade", (DbType)SqlDbType.Int, 4, foruminfo.Istrade),
-						DbHelper.MakeInParam("@recyclebin", (DbType)SqlDbType.Int, 4, foruminfo.Recyclebin),
-						DbHelper.MakeInParam("@modnewposts", (DbType)SqlDbType.Int, 4, foruminfo.Modnewposts),
-						DbHelper.MakeInParam("@jammer", (DbType)SqlDbType.Int, 4, foruminfo.Jammer),
-						DbHelper.MakeInParam("@disablewatermark", (DbType)SqlDbType.Int, 4, foruminfo.Disablewatermark),
-						DbHelper.MakeInParam("@inheritedmod", (DbType)SqlDbType.Int, 4, foruminfo.Inheritedmod),
-						DbHelper.MakeInParam("@autoclose", (DbType)SqlDbType.SmallInt, 2, foruminfo.Autoclose),
-						DbHelper.MakeInParam("@displayorder", (DbType)SqlDbType.Int, 4, foruminfo.Displayorder),
-                        DbHelper.MakeInParam("@allowpostspecial",(DbType)SqlDbType.Int,4,foruminfo.Allowpostspecial),
-                        DbHelper.MakeInParam("@allowspecialonly",(DbType)SqlDbType.Int,4,foruminfo.Allowspecialonly),
-						DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int, 4, foruminfo.Fid)
+						DbHelper.MakeInParam("@name", DbType.AnsiString, 50, foruminfo.Name),
+						DbHelper.MakeInParam("@status", DbType.Int32, 4, foruminfo.Status),
+						DbHelper.MakeInParam("@colcount", DbType.Int16, 4, foruminfo.Colcount),
+						DbHelper.MakeInParam("@templateid", DbType.Int16, 2, foruminfo.Templateid),
+						DbHelper.MakeInParam("@allowsmilies", DbType.Int32, 4, foruminfo.Allowsmilies),
+						DbHelper.MakeInParam("@allowrss", DbType.Int32, 6, foruminfo.Allowrss),
+						DbHelper.MakeInParam("@allowhtml", DbType.Int32, 4, foruminfo.Allowhtml),
+						DbHelper.MakeInParam("@allowbbcode", DbType.Int32, 4, foruminfo.Allowbbcode),
+						DbHelper.MakeInParam("@allowimgcode", DbType.Int32, 4, foruminfo.Allowimgcode),
+						DbHelper.MakeInParam("@allowblog", DbType.Int32, 4, foruminfo.Allowblog),
+						DbHelper.MakeInParam("@alloweditrules", DbType.Int32, 4, foruminfo.Alloweditrules),
+						DbHelper.MakeInParam("@allowthumbnail", DbType.Int32, 4, foruminfo.Allowthumbnail),
+                        DbHelper.MakeInParam("@allowtag",DbType.Int32,4,foruminfo.Allowtag),
+                        DbHelper.MakeInParam("@istrade", DbType.Int32, 4, foruminfo.Istrade),
+						DbHelper.MakeInParam("@recyclebin", DbType.Int32, 4, foruminfo.Recyclebin),
+						DbHelper.MakeInParam("@modnewposts", DbType.Int32, 4, foruminfo.Modnewposts),
+						DbHelper.MakeInParam("@jammer", DbType.Int32, 4, foruminfo.Jammer),
+						DbHelper.MakeInParam("@disablewatermark", DbType.Int32, 4, foruminfo.Disablewatermark),
+						DbHelper.MakeInParam("@inheritedmod", DbType.Int32, 4, foruminfo.Inheritedmod),
+						DbHelper.MakeInParam("@autoclose", DbType.Int16, 2, foruminfo.Autoclose),
+						DbHelper.MakeInParam("@displayorder", DbType.Int32, 4, foruminfo.Displayorder),
+                        DbHelper.MakeInParam("@allowpostspecial",DbType.Int32,4,foruminfo.Allowpostspecial),
+                        DbHelper.MakeInParam("@allowspecialonly",DbType.Int32,4,foruminfo.Allowspecialonly),
+						DbHelper.MakeInParam("@fid", DbType.Int32, 4, foruminfo.Fid)
 					};
                     string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [name]=@name, [status]=@status, [colcount]=@colcount, [templateid]=@templateid,"
                         + "[allowsmilies]=@allowsmilies ,[allowrss]=@allowrss, [allowhtml]=@allowhtml, [allowbbcode]=@allowbbcode, [allowimgcode]=@allowimgcode, "
@@ -428,27 +430,27 @@ namespace Discuz.Data.Sqlite
                     DbHelper.ExecuteNonQuery(trans, CommandType.Text, sql, parms);
 
                     DbParameter[] prams1 = {
-						DbHelper.MakeInParam("@description", (DbType)SqlDbType.NText, 0, foruminfo.Description),
-						DbHelper.MakeInParam("@password", (DbType)SqlDbType.NVarChar, 16, foruminfo.Password),
-						DbHelper.MakeInParam("@icon", (DbType)SqlDbType.VarChar, 255, foruminfo.Icon),
-						DbHelper.MakeInParam("@redirect", (DbType)SqlDbType.VarChar, 255, foruminfo.Redirect),
-						DbHelper.MakeInParam("@attachextensions", (DbType)SqlDbType.VarChar, 255, foruminfo.Attachextensions),
-						DbHelper.MakeInParam("@rules", (DbType)SqlDbType.NText, 0, foruminfo.Rules),
-						DbHelper.MakeInParam("@topictypes", (DbType)SqlDbType.Text, 0, foruminfo.Topictypes),
-						DbHelper.MakeInParam("@viewperm", (DbType)SqlDbType.Text, 0, foruminfo.Viewperm),
-						DbHelper.MakeInParam("@postperm", (DbType)SqlDbType.Text, 0, foruminfo.Postperm),
-						DbHelper.MakeInParam("@replyperm", (DbType)SqlDbType.Text, 0, foruminfo.Replyperm),
-						DbHelper.MakeInParam("@getattachperm", (DbType)SqlDbType.Text, 0, foruminfo.Getattachperm),
-						DbHelper.MakeInParam("@postattachperm", (DbType)SqlDbType.Text, 0, foruminfo.Postattachperm),
-                        DbHelper.MakeInParam("@applytopictype", (DbType)SqlDbType.TinyInt, 1, foruminfo.Applytopictype),
-						DbHelper.MakeInParam("@postbytopictype", (DbType)SqlDbType.TinyInt, 1, foruminfo.Postbytopictype),
-						DbHelper.MakeInParam("@viewbytopictype", (DbType)SqlDbType.TinyInt, 1, foruminfo.Viewbytopictype),
-						DbHelper.MakeInParam("@topictypeprefix", (DbType)SqlDbType.TinyInt, 1, foruminfo.Topictypeprefix),
-                        DbHelper.MakeInParam("@permuserlist", (DbType)SqlDbType.NText, 0, foruminfo.Permuserlist),
-						DbHelper.MakeInParam("@seokeywords", (DbType)SqlDbType.NVarChar, 500, foruminfo.Seokeywords),
-                        DbHelper.MakeInParam("@seodescription", (DbType)SqlDbType.NVarChar, 500, foruminfo.Seodescription),
-                        DbHelper.MakeInParam("@rewritename", (DbType)SqlDbType.NVarChar, 20, foruminfo.Rewritename),
-						DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int, 4, foruminfo.Fid)
+						DbHelper.MakeInParam("@description", DbType.String, 0, foruminfo.Description),
+						DbHelper.MakeInParam("@password", DbType.String, 16, foruminfo.Password),
+						DbHelper.MakeInParam("@icon", DbType.AnsiString, 255, foruminfo.Icon),
+						DbHelper.MakeInParam("@redirect", DbType.AnsiString, 255, foruminfo.Redirect),
+						DbHelper.MakeInParam("@attachextensions", DbType.AnsiString, 255, foruminfo.Attachextensions),
+						DbHelper.MakeInParam("@rules", DbType.String, 0, foruminfo.Rules),
+						DbHelper.MakeInParam("@topictypes", DbType.String, 0, foruminfo.Topictypes),
+						DbHelper.MakeInParam("@viewperm", DbType.String, 0, foruminfo.Viewperm),
+						DbHelper.MakeInParam("@postperm", DbType.String, 0, foruminfo.Postperm),
+						DbHelper.MakeInParam("@replyperm", DbType.String, 0, foruminfo.Replyperm),
+						DbHelper.MakeInParam("@getattachperm", DbType.String, 0, foruminfo.Getattachperm),
+						DbHelper.MakeInParam("@postattachperm", DbType.String, 0, foruminfo.Postattachperm),
+                        DbHelper.MakeInParam("@applytopictype", DbType.Byte, 1, foruminfo.Applytopictype),
+						DbHelper.MakeInParam("@postbytopictype", DbType.Byte, 1, foruminfo.Postbytopictype),
+						DbHelper.MakeInParam("@viewbytopictype", DbType.Byte, 1, foruminfo.Viewbytopictype),
+						DbHelper.MakeInParam("@topictypeprefix", DbType.Byte, 1, foruminfo.Topictypeprefix),
+                        DbHelper.MakeInParam("@permuserlist", DbType.String, 0, foruminfo.Permuserlist),
+						DbHelper.MakeInParam("@seokeywords", DbType.String, 500, foruminfo.Seokeywords),
+                        DbHelper.MakeInParam("@seodescription", DbType.String, 500, foruminfo.Seodescription),
+                        DbHelper.MakeInParam("@rewritename", DbType.String, 20, foruminfo.Rewritename),
+						DbHelper.MakeInParam("@fid", DbType.Int32, 4, foruminfo.Fid)
 					};
                     sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "forumfields] SET [description]=@description,[password]=@password,[icon]=@icon,[redirect]=@redirect,"
                          + "[attachextensions]=@attachextensions,[rules]=@rules,[topictypes]=@topictypes,[viewperm]=@viewperm,[postperm]=@postperm,[replyperm]=@replyperm,"
@@ -472,34 +474,34 @@ namespace Discuz.Data.Sqlite
         public int InsertForumsInf(ForumInfo foruminfo)
         {
             DbParameter[] parms = {
-				DbHelper.MakeInParam("@parentid", (DbType)SqlDbType.SmallInt, 2, foruminfo.Parentid),
-				DbHelper.MakeInParam("@layer", (DbType)SqlDbType.Int, 4, foruminfo.Layer),
-				DbHelper.MakeInParam("@pathlist", (DbType)SqlDbType.NChar, 3000, foruminfo.Pathlist == null ? " " : foruminfo.Pathlist),
-				DbHelper.MakeInParam("@parentidlist", (DbType)SqlDbType.NChar, 300, foruminfo.Parentidlist== null ? " " : foruminfo.Parentidlist),
-				DbHelper.MakeInParam("@subforumcount", (DbType)SqlDbType.Int, 4, foruminfo.Subforumcount),
-				DbHelper.MakeInParam("@name", (DbType)SqlDbType.NChar, 50, foruminfo.Name),
-				DbHelper.MakeInParam("@status", (DbType)SqlDbType.Int, 4, foruminfo.Status),
-				DbHelper.MakeInParam("@colcount", (DbType)SqlDbType.SmallInt, 4, foruminfo.Colcount),
-				DbHelper.MakeInParam("@displayorder", (DbType)SqlDbType.Int, 4, foruminfo.Displayorder),
-				DbHelper.MakeInParam("@templateid", (DbType)SqlDbType.SmallInt, 2, foruminfo.Templateid),
-				DbHelper.MakeInParam("@allowsmilies", (DbType)SqlDbType.Int, 4, foruminfo.Allowsmilies),
-				DbHelper.MakeInParam("@allowrss", (DbType)SqlDbType.Int, 6, foruminfo.Allowrss),
-				DbHelper.MakeInParam("@allowhtml", (DbType)SqlDbType.Int, 4, foruminfo.Allowhtml),
-				DbHelper.MakeInParam("@allowbbcode", (DbType)SqlDbType.Int, 4, foruminfo.Allowbbcode),
-				DbHelper.MakeInParam("@allowimgcode", (DbType)SqlDbType.Int, 4, foruminfo.Allowimgcode),
-				DbHelper.MakeInParam("@allowblog", (DbType)SqlDbType.Int, 4, foruminfo.Allowblog),
-				DbHelper.MakeInParam("@istrade", (DbType)SqlDbType.Int, 4, foruminfo.Istrade),
-				DbHelper.MakeInParam("@alloweditrules", (DbType)SqlDbType.Int, 4, foruminfo.Alloweditrules),
-				DbHelper.MakeInParam("@allowthumbnail", (DbType)SqlDbType.Int, 4, foruminfo.Allowthumbnail),
-                DbHelper.MakeInParam("@allowtag",(DbType)SqlDbType.Int,4,foruminfo.Allowtag),
-				DbHelper.MakeInParam("@recyclebin", (DbType)SqlDbType.Int, 4, foruminfo.Recyclebin),
-				DbHelper.MakeInParam("@modnewposts", (DbType)SqlDbType.Int, 4, foruminfo.Modnewposts),
-				DbHelper.MakeInParam("@jammer", (DbType)SqlDbType.Int, 4, foruminfo.Jammer),
-				DbHelper.MakeInParam("@disablewatermark", (DbType)SqlDbType.Int, 4, foruminfo.Disablewatermark),
-				DbHelper.MakeInParam("@inheritedmod", (DbType)SqlDbType.Int, 4, foruminfo.Inheritedmod),
-				DbHelper.MakeInParam("@autoclose", (DbType)SqlDbType.SmallInt, 2, foruminfo.Autoclose),                
-                DbHelper.MakeInParam("@allowpostspecial",(DbType)SqlDbType.Int,4,foruminfo.Allowpostspecial),
-                DbHelper.MakeInParam("@allowspecialonly",(DbType)SqlDbType.Int,4,foruminfo.Allowspecialonly),
+				DbHelper.MakeInParam("@parentid", DbType.Int16, 2, foruminfo.Parentid),
+				DbHelper.MakeInParam("@layer", DbType.Int32, 4, foruminfo.Layer),
+				DbHelper.MakeInParam("@pathlist", DbType.AnsiString, 3000, foruminfo.Pathlist == null ? " " : foruminfo.Pathlist),
+				DbHelper.MakeInParam("@parentidlist", DbType.AnsiString, 300, foruminfo.Parentidlist== null ? " " : foruminfo.Parentidlist),
+				DbHelper.MakeInParam("@subforumcount", DbType.Int32, 4, foruminfo.Subforumcount),
+				DbHelper.MakeInParam("@name", DbType.AnsiString, 50, foruminfo.Name),
+				DbHelper.MakeInParam("@status", DbType.Int32, 4, foruminfo.Status),
+				DbHelper.MakeInParam("@colcount", DbType.Int16, 4, foruminfo.Colcount),
+				DbHelper.MakeInParam("@displayorder", DbType.Int32, 4, foruminfo.Displayorder),
+				DbHelper.MakeInParam("@templateid", DbType.Int16, 2, foruminfo.Templateid),
+				DbHelper.MakeInParam("@allowsmilies", DbType.Int32, 4, foruminfo.Allowsmilies),
+				DbHelper.MakeInParam("@allowrss", DbType.Int32, 6, foruminfo.Allowrss),
+				DbHelper.MakeInParam("@allowhtml", DbType.Int32, 4, foruminfo.Allowhtml),
+				DbHelper.MakeInParam("@allowbbcode", DbType.Int32, 4, foruminfo.Allowbbcode),
+				DbHelper.MakeInParam("@allowimgcode", DbType.Int32, 4, foruminfo.Allowimgcode),
+				DbHelper.MakeInParam("@allowblog", DbType.Int32, 4, foruminfo.Allowblog),
+				DbHelper.MakeInParam("@istrade", DbType.Int32, 4, foruminfo.Istrade),
+				DbHelper.MakeInParam("@alloweditrules", DbType.Int32, 4, foruminfo.Alloweditrules),
+				DbHelper.MakeInParam("@allowthumbnail", DbType.Int32, 4, foruminfo.Allowthumbnail),
+                DbHelper.MakeInParam("@allowtag",DbType.Int32,4,foruminfo.Allowtag),
+				DbHelper.MakeInParam("@recyclebin", DbType.Int32, 4, foruminfo.Recyclebin),
+				DbHelper.MakeInParam("@modnewposts", DbType.Int32, 4, foruminfo.Modnewposts),
+				DbHelper.MakeInParam("@jammer", DbType.Int32, 4, foruminfo.Jammer),
+				DbHelper.MakeInParam("@disablewatermark", DbType.Int32, 4, foruminfo.Disablewatermark),
+				DbHelper.MakeInParam("@inheritedmod", DbType.Int32, 4, foruminfo.Inheritedmod),
+				DbHelper.MakeInParam("@autoclose", DbType.Int16, 2, foruminfo.Autoclose),                
+                DbHelper.MakeInParam("@allowpostspecial",DbType.Int32,4,foruminfo.Allowpostspecial),
+                DbHelper.MakeInParam("@allowspecialonly",DbType.Int32,4,foruminfo.Allowspecialonly),
 			};
             string sql = "INSERT INTO [" + BaseConfigs.GetTablePrefix + "forums] ([parentid],[layer],[pathlist],[parentidlist],[subforumcount],[name],"
                 + "[status],[colcount],[displayorder],[templateid],[allowsmilies],[allowrss],[allowhtml],[allowbbcode],[allowimgcode],[allowblog],"
@@ -512,25 +514,25 @@ namespace Discuz.Data.Sqlite
             int fid = GetMaxForumId();
 
             DbParameter[] prams1 = {
-				DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int, 4, fid),
-				DbHelper.MakeInParam("@description", (DbType)SqlDbType.NText, 0, foruminfo.Description),
-				DbHelper.MakeInParam("@password", (DbType)SqlDbType.VarChar, 16, foruminfo.Password),
-				DbHelper.MakeInParam("@icon", (DbType)SqlDbType.VarChar, 255, foruminfo.Icon),
-				DbHelper.MakeInParam("@postcredits", (DbType)SqlDbType.VarChar, 255, foruminfo.Postcredits),
-				DbHelper.MakeInParam("@replycredits", (DbType)SqlDbType.VarChar, 255, foruminfo.Replycredits),
-				DbHelper.MakeInParam("@redirect", (DbType)SqlDbType.VarChar, 255, foruminfo.Redirect),
-				DbHelper.MakeInParam("@attachextensions", (DbType)SqlDbType.VarChar, 255, foruminfo.Attachextensions),
-				DbHelper.MakeInParam("@moderators", (DbType)SqlDbType.Text, 0, foruminfo.Moderators),
-				DbHelper.MakeInParam("@rules", (DbType)SqlDbType.NText, 0, foruminfo.Rules),
-				DbHelper.MakeInParam("@topictypes", (DbType)SqlDbType.Text, 0, foruminfo.Topictypes),
-				DbHelper.MakeInParam("@viewperm", (DbType)SqlDbType.Text, 0, foruminfo.Viewperm),
-				DbHelper.MakeInParam("@postperm", (DbType)SqlDbType.Text, 0, foruminfo.Postperm),
-				DbHelper.MakeInParam("@replyperm", (DbType)SqlDbType.Text, 0, foruminfo.Replyperm),
-				DbHelper.MakeInParam("@getattachperm", (DbType)SqlDbType.Text, 0, foruminfo.Getattachperm),
-				DbHelper.MakeInParam("@postattachperm", (DbType)SqlDbType.Text, 0, foruminfo.Postattachperm),
-				DbHelper.MakeInParam("@seokeywords", (DbType)SqlDbType.NVarChar, 500, foruminfo.Seokeywords),
-                DbHelper.MakeInParam("@seodescription", (DbType)SqlDbType.NVarChar, 500, foruminfo.Seodescription),
-                DbHelper.MakeInParam("@rewritename", (DbType)SqlDbType.NVarChar, 20, foruminfo.Rewritename)
+				DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid),
+				DbHelper.MakeInParam("@description", DbType.String, 0, foruminfo.Description),
+				DbHelper.MakeInParam("@password", DbType.AnsiString, 16, foruminfo.Password),
+				DbHelper.MakeInParam("@icon", DbType.AnsiString, 255, foruminfo.Icon),
+				DbHelper.MakeInParam("@postcredits", DbType.AnsiString, 255, foruminfo.Postcredits),
+				DbHelper.MakeInParam("@replycredits", DbType.AnsiString, 255, foruminfo.Replycredits),
+				DbHelper.MakeInParam("@redirect", DbType.AnsiString, 255, foruminfo.Redirect),
+				DbHelper.MakeInParam("@attachextensions", DbType.AnsiString, 255, foruminfo.Attachextensions),
+				DbHelper.MakeInParam("@moderators", DbType.String, 0, foruminfo.Moderators),
+				DbHelper.MakeInParam("@rules", DbType.String, 0, foruminfo.Rules),
+				DbHelper.MakeInParam("@topictypes", DbType.String, 0, foruminfo.Topictypes),
+				DbHelper.MakeInParam("@viewperm", DbType.String, 0, foruminfo.Viewperm),
+				DbHelper.MakeInParam("@postperm", DbType.String, 0, foruminfo.Postperm),
+				DbHelper.MakeInParam("@replyperm", DbType.String, 0, foruminfo.Replyperm),
+				DbHelper.MakeInParam("@getattachperm", DbType.String, 0, foruminfo.Getattachperm),
+				DbHelper.MakeInParam("@postattachperm", DbType.String, 0, foruminfo.Postattachperm),
+				DbHelper.MakeInParam("@seokeywords", DbType.String, 500, foruminfo.Seokeywords),
+                DbHelper.MakeInParam("@seodescription", DbType.String, 500, foruminfo.Seodescription),
+                DbHelper.MakeInParam("@rewritename", DbType.String, 20, foruminfo.Rewritename)
 			};
             sql = "INSERT INTO [" + BaseConfigs.GetTablePrefix + "forumfields] ([fid],[description],[password],[icon],[postcredits],[replycredits],[redirect],"
                   + "[attachextensions],[moderators],[rules],[topictypes],[viewperm],[postperm],[replyperm],[getattachperm],[postattachperm],[seokeywords],[seodescription],[rewritename]) "
@@ -544,8 +546,8 @@ namespace Discuz.Data.Sqlite
         {
             DbParameter[] parms = 
             {
-			    DbHelper.MakeInParam("@pathlist", (DbType)SqlDbType.NChar, 3000, pathlist),
-                DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int, 4, fid)
+			    DbHelper.MakeInParam("@pathlist", DbType.AnsiString, 3000, pathlist),
+                DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid)
 		    };
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET pathlist=@pathlist  WHERE [fid]=@fid";
             DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
@@ -555,9 +557,9 @@ namespace Discuz.Data.Sqlite
         {
             DbParameter[] parms = 
             {
-                DbHelper.MakeInParam("@layer", (DbType)SqlDbType.SmallInt, 2, layer),
-                DbHelper.MakeInParam("@parentidlist", (DbType)SqlDbType.Char, 300, parentidlist),
-                DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int, 4, fid)
+                DbHelper.MakeInParam("@layer", DbType.Int16, 2, layer),
+                DbHelper.MakeInParam("@parentidlist", DbType.AnsiString, 300, parentidlist),
+                DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid)
 		    };
             DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [layer]=@layer WHERE [fid]=@fid", parms);
             DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [parentidlist]=@parentidlist WHERE [fid]=@fid", parms);
@@ -567,7 +569,7 @@ namespace Discuz.Data.Sqlite
         {
             DbParameter[] parms = 
             {
-                DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int, 4, fid)
+                DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid)
 		    };
             string sql = "SELECT TOP 1 [parentid] FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE fid=@fid";
             return Convert.ToInt32(DbHelper.ExecuteScalar(CommandType.Text, sql, parms));
@@ -737,7 +739,7 @@ namespace Discuz.Data.Sqlite
         {
             DbParameter[] parms = 
             {
-                DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int, 4, fid)
+                DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid)
 		    };
             string sql = "SELECT TOP 1 * FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE [parentid]=@fid";
             if (DbHelper.ExecuteDataset(CommandType.Text, sql, parms).Tables[0].Rows.Count > 0)
@@ -800,7 +802,7 @@ namespace Discuz.Data.Sqlite
         {
             DbParameter[] parms = 
             {
-                DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int, 4, fid)
+                DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid)
 		    };
             string sql = "SELECT [parentid] From [" + BaseConfigs.GetTablePrefix + "forums] WHERE [inheritedmod]=1 AND [fid]=@fid";
             return DbHelper.ExecuteDataset(CommandType.Text, sql, parms).Tables[0];
@@ -826,7 +828,7 @@ namespace Discuz.Data.Sqlite
                         {
                             DbParameter[] parms =
 								{
-									DbHelper.MakeInParam("@username", (DbType)SqlDbType.VarChar, 20, username.Trim())
+									DbHelper.MakeInParam("@username", DbType.AnsiString, 20, username.Trim())
 								};
                             //先取出当前节点的信息
                             DataTable dt = DbHelper.ExecuteDataset(trans, CommandType.Text, "SELECT TOP 1 [uid] FROM [" + BaseConfigs.GetTablePrefix + "users] WHERE [groupid]<>7 AND [groupid]<>8 AND [username]=@username", parms).Tables[0];
@@ -843,7 +845,7 @@ namespace Discuz.Data.Sqlite
                     {
                         DbParameter[] prams1 =
 							{
-								DbHelper.MakeInParam("@moderators", (DbType)SqlDbType.VarChar, 255, usernamelist.Substring(0, usernamelist.Length - 1))
+								DbHelper.MakeInParam("@moderators", DbType.AnsiString, 255, usernamelist.Substring(0, usernamelist.Length - 1))
 
 							};
                         DbHelper.ExecuteNonQuery(trans, CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forumfields] SET [moderators]=@moderators WHERE [fid] =" + fid, prams1);
@@ -868,7 +870,7 @@ namespace Discuz.Data.Sqlite
         {
             DbParameter[] parms =
 			{
-                DbHelper.MakeInParam("@parentid", (DbType)SqlDbType.Int, 4, parentid)
+                DbHelper.MakeInParam("@parentid", DbType.Int32, 4, parentid)
 			};
             string sql = "SELECT [fid] FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE [parentid]=@parentid ORDER BY [displayorder] ASC";
             return DbHelper.ExecuteDataset(CommandType.Text, sql, parms).Tables[0];
@@ -930,8 +932,8 @@ namespace Discuz.Data.Sqlite
         {
             DbParameter[] parms =
 			{
-                DbHelper.MakeInParam("@subforumcount", (DbType)SqlDbType.Int, 4, subforumcount),
-                DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int, 4, fid)
+                DbHelper.MakeInParam("@subforumcount", DbType.Int32, 4, subforumcount),
+                DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid)
 			};
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [subforumcount]=@subforumcount WHERE [fid]=@fid";
             DbHelper.ExecuteDataset(CommandType.Text, sql, parms);
@@ -941,8 +943,8 @@ namespace Discuz.Data.Sqlite
         {
             DbParameter[] parms =
 			{
-                DbHelper.MakeInParam("@displayorder", (DbType)SqlDbType.Int, 4, displayorder),
-                DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int, 4, fid)
+                DbHelper.MakeInParam("@displayorder", DbType.Int32, 4, displayorder),
+                DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid)
 			};
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [displayorder]=@displayorder WHERE [fid]=@fid";
             DbHelper.ExecuteDataset(CommandType.Text, sql, parms);
@@ -958,8 +960,8 @@ namespace Discuz.Data.Sqlite
         {
             DbParameter[] parms =
 			{
-                DbHelper.MakeInParam("@status", (DbType)SqlDbType.Int, 4, status),
-                DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int, 4, fid)
+                DbHelper.MakeInParam("@status", DbType.Int32, 4, status),
+                DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid)
 			};
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [status]=@status WHERE [fid]=@fid";
             DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
@@ -969,7 +971,7 @@ namespace Discuz.Data.Sqlite
         {
             DbParameter[] parms =
 			{
-                DbHelper.MakeInParam("@parentid", (DbType)SqlDbType.Int, 4, parentid)
+                DbHelper.MakeInParam("@parentid", DbType.Int32, 4, parentid)
 			};
             string sql = "SELECT * FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE [parentid]=@parentid ORDER BY [DisplayOrder]";
             return DbHelper.ExecuteDataset(CommandType.Text, sql, parms).Tables[0];
@@ -1104,7 +1106,7 @@ namespace Discuz.Data.Sqlite
         public IDataReader GetTopForumFids(int lastfid, int statcount)
         {
             DbParameter[] parms = {
-				DbHelper.MakeInParam("@lastfid", (DbType)SqlDbType.Int, 4, lastfid),
+				DbHelper.MakeInParam("@lastfid", DbType.Int32, 4, lastfid),
 			};
 
             return DbHelper.ExecuteReader(CommandType.Text, "SELECT TOP " + statcount + " [fid] FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE [fid] > @lastfid", parms);
@@ -1118,10 +1120,10 @@ namespace Discuz.Data.Sqlite
         public int UpdateOnlineList(int groupid, int displayorder, string img, string title)
         {
             DbParameter[] parms = { 
-                                        DbHelper.MakeInParam("@groupid", (DbType)SqlDbType.Int, 4, groupid),
-                                        DbHelper.MakeInParam("@displayorder", (DbType)SqlDbType.Int, 4, displayorder),
-                                        DbHelper.MakeInParam("@img", (DbType)SqlDbType.VarChar, 50, img),
-                                        DbHelper.MakeInParam("@title", (DbType)SqlDbType.NVarChar, 50, title)
+                                        DbHelper.MakeInParam("@groupid", DbType.Int32, 4, groupid),
+                                        DbHelper.MakeInParam("@displayorder", DbType.Int32, 4, displayorder),
+                                        DbHelper.MakeInParam("@img", DbType.AnsiString, 50, img),
+                                        DbHelper.MakeInParam("@title", DbType.String, 50, title)
                                     };
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "onlinelist] SET [displayorder]=@displayorder,[title]=@title,[img]=@img  WHERE [groupid]=@groupid";
             return DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
@@ -1140,7 +1142,7 @@ namespace Discuz.Data.Sqlite
 
         public int DeleteWord(int id)
         {
-            DbParameter parm = DbHelper.MakeInParam("@id", (DbType)SqlDbType.Int, 4, id);
+            DbParameter parm = DbHelper.MakeInParam("@id", DbType.Int32, 4, id);
 
             string sql = "DELETE FROM [" + BaseConfigs.GetTablePrefix + "words] WHERE [id]=@id";
             return DbHelper.ExecuteNonQuery(CommandType.Text, sql, parm);
@@ -1170,9 +1172,9 @@ namespace Discuz.Data.Sqlite
         public int UpdateWord(int id, string find, string replacement)
         {
             DbParameter[] parms = {
-                    DbHelper.MakeInParam("@id", (DbType)SqlDbType.Int, 4, id),
-					DbHelper.MakeInParam("@find", (DbType)SqlDbType.VarChar, 255, find),
-					DbHelper.MakeInParam("@replacement", (DbType)SqlDbType.VarChar, 255, replacement)
+                    DbHelper.MakeInParam("@id", DbType.Int32, 4, id),
+					DbHelper.MakeInParam("@find", DbType.AnsiString, 255, find),
+					DbHelper.MakeInParam("@replacement", DbType.AnsiString, 255, replacement)
 				};
 
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "words] SET [find]=@find, [replacement]=@replacement WHERE [id]=@id";
@@ -1187,16 +1189,16 @@ namespace Discuz.Data.Sqlite
 
         public bool ExistWord(string find)
         {
-            DbParameter parm = DbHelper.MakeInParam("@find", (DbType)SqlDbType.NVarChar, 255, find);
+            DbParameter parm = DbHelper.MakeInParam("@find", DbType.String, 255, find);
             return DbHelper.ExecuteDataset(CommandType.Text, "SELECT TOP 1  * FROM [" + BaseConfigs.GetTablePrefix + "words] WHERE [find]=@find", parm).Tables[0].Rows.Count > 0;
         }
 
         public int AddWord(string username, string find, string replacement)
         {
             DbParameter[] parms = { 
-                                        DbHelper.MakeInParam("@username", (DbType)SqlDbType.NVarChar, 20, username),
-                                        DbHelper.MakeInParam("@find", (DbType)SqlDbType.NVarChar, 255, find),
-                                        DbHelper.MakeInParam("@replacement", (DbType)SqlDbType.NVarChar, 255, replacement)
+                                        DbHelper.MakeInParam("@username", DbType.String, 20, username),
+                                        DbHelper.MakeInParam("@find", DbType.String, 255, find),
+                                        DbHelper.MakeInParam("@replacement", DbType.String, 255, replacement)
                                     };
             string sql = "INSERT INTO [" + BaseConfigs.GetTablePrefix + "words] ([admin], [find], [replacement]) VALUES (@username,@find,@replacement)";
 
@@ -1206,8 +1208,8 @@ namespace Discuz.Data.Sqlite
         public bool IsExistTopicType(string typename,int currenttypeid)
         {
             DbParameter[] parms = { 
-                                        DbHelper.MakeInParam("@typename", (DbType)SqlDbType.NVarChar, 30, typename),
-                                        DbHelper.MakeInParam("@currenttypeid", (DbType)SqlDbType.Int, 4, currenttypeid)
+                                        DbHelper.MakeInParam("@typename", DbType.String, 30, typename),
+                                        DbHelper.MakeInParam("@currenttypeid", DbType.Int32, 4, currenttypeid)
                                     };
             string sql = "SELECT [typeid] FROM [" + BaseConfigs.GetTablePrefix + "topictypes] WHERE [name]=@typename AND [typeid]<>@currenttypeid";
             return DbHelper.ExecuteDataset(CommandType.Text, sql, parms).Tables[0].Rows.Count != 0;
@@ -1215,7 +1217,7 @@ namespace Discuz.Data.Sqlite
 
         public bool IsExistTopicType(string typename)
         {
-            DbParameter parms = DbHelper.MakeInParam("@typename", (DbType)SqlDbType.NVarChar, 30, typename);
+            DbParameter parms = DbHelper.MakeInParam("@typename", DbType.String, 30, typename);
             string sql = "SELECT TOP 1  * FROM [" + BaseConfigs.GetTablePrefix + "topictypes] WHERE [name]=@typename";
             return DbHelper.ExecuteDataset(CommandType.Text, sql, parms).Tables[0].Rows.Count != 0;
         }
@@ -1234,8 +1236,8 @@ namespace Discuz.Data.Sqlite
         public void UpdateTopicTypeForForum(string topictypes,int fid)
         {
             DbParameter[] parms = { 
-                                        DbHelper.MakeInParam("@topictypes", (DbType)SqlDbType.Text, 0, topictypes),
-                                        DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int, 4, fid)
+                                        DbHelper.MakeInParam("@topictypes", DbType.String, 0, topictypes),
+                                        DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid)
                                     };
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "forumfields] SET [topictypes]=@topictypes WHERE [fid]=@fid";
             DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
@@ -1244,10 +1246,10 @@ namespace Discuz.Data.Sqlite
         public void UpdateTopicTypes(string name, int displayorder,string description,int typeid)
         {
             DbParameter[] parms = {
-				DbHelper.MakeInParam("@name", (DbType)SqlDbType.NVarChar,100, name),
-				DbHelper.MakeInParam("@displayorder", (DbType)SqlDbType.Int,4,displayorder),
-				DbHelper.MakeInParam("@description", (DbType)SqlDbType.VarChar,500,description),
-				DbHelper.MakeInParam("@typeid", (DbType)SqlDbType.Int,4,typeid)
+				DbHelper.MakeInParam("@name", DbType.String,100, name),
+				DbHelper.MakeInParam("@displayorder", DbType.Int32,4,displayorder),
+				DbHelper.MakeInParam("@description", DbType.AnsiString,500,description),
+				DbHelper.MakeInParam("@typeid", DbType.Int32,4,typeid)
 								   };
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "topictypes] SET [name]=@name ,[displayorder]=@displayorder, [description]=@description WHERE [typeid]=@typeid";
             DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
@@ -1256,9 +1258,9 @@ namespace Discuz.Data.Sqlite
         public void AddTopicTypes(string typename, int displayorder, string description)
         {
             DbParameter[] parms = {
-				DbHelper.MakeInParam("@name",(DbType)SqlDbType.NVarChar,100, typename),
-				DbHelper.MakeInParam("@displayorder",(DbType)SqlDbType.Int,4,displayorder),
-				DbHelper.MakeInParam("@description",(DbType)SqlDbType.VarChar,500,description)
+				DbHelper.MakeInParam("@name",DbType.String,100, typename),
+				DbHelper.MakeInParam("@displayorder",DbType.Int32,4,displayorder),
+				DbHelper.MakeInParam("@description",DbType.AnsiString,500,description)
 								  };
             string sql = "INSERT INTO [" + BaseConfigs.GetTablePrefix + "topictypes] ([name],[displayorder],[description]) VALUES(@name,@displayorder,@description)";
             DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
@@ -1289,7 +1291,7 @@ namespace Discuz.Data.Sqlite
 
         public void ClearTopicTopicType(int typeid)
         {
-            DbParameter pram = DbHelper.MakeInParam("@typeid", (DbType)SqlDbType.Int, 4, typeid);
+            DbParameter pram = DbHelper.MakeInParam("@typeid", DbType.Int32, 4, typeid);
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "topics] SET [typeid]=0 Where [typeid]=@typeid";
             DbHelper.ExecuteNonQuery(CommandType.Text,sql,pram);
         }
@@ -1313,8 +1315,8 @@ namespace Discuz.Data.Sqlite
         {
             DbParameter[] parms = 
 			{
-				DbHelper.MakeInParam("@permuserlist", (DbType)SqlDbType.NText,0,permuserlist),
-				DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int,4, fid)
+				DbHelper.MakeInParam("@permuserlist", DbType.String,0,permuserlist),
+				DbHelper.MakeInParam("@fid", DbType.Int32,4, fid)
 			};
             DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forumfields] SET [Permuserlist]=@permuserlist WHERE [fid]=@fid", parms);
         }
@@ -1457,7 +1459,7 @@ namespace Discuz.Data.Sqlite
         public DataTable AuditTopicBind(string condition)
         {
             //DbParameter param =
-            //    DbHelper.MakeInParam("@postdatetime", (DbType)SqlDbType.DateTime, 8, postdatetime);
+            //    DbHelper.MakeInParam("@postdatetime", DbType.DateTime, 8, postdatetime);
 
             DataTable dt = DbHelper.ExecuteDataset("SELECT * FROM [" + BaseConfigs.GetTablePrefix + "topics] WHERE " + condition).Tables[0];
             return dt;
@@ -2074,8 +2076,8 @@ namespace Discuz.Data.Sqlite
         {
             DbParameter[] parms = 
 			{
-				DbHelper.MakeInParam("@identifyid", (DbType)SqlDbType.Int,4,id),
-				DbHelper.MakeInParam("@name", (DbType)SqlDbType.NVarChar,50, name)
+				DbHelper.MakeInParam("@identifyid", DbType.Int32,4,id),
+				DbHelper.MakeInParam("@name", DbType.String,50, name)
 			};
             string sql = "SELECT COUNT(1) FROM [" + BaseConfigs.GetTablePrefix + "topicidentify] WHERE [name]=@name AND [identifyid]<>@identifyid";
             if (int.Parse(DbHelper.ExecuteScalar(CommandType.Text, sql,parms).ToString()) != 0)  //有相同的名称存在，更新失败
@@ -2091,8 +2093,8 @@ namespace Discuz.Data.Sqlite
         {
             DbParameter[] parms = 
 			{
-				DbHelper.MakeInParam("@name", (DbType)SqlDbType.NVarChar,50, name),
-				DbHelper.MakeInParam("@filename", (DbType)SqlDbType.VarChar,50,filename),
+				DbHelper.MakeInParam("@name", DbType.String,50, name),
+				DbHelper.MakeInParam("@filename", DbType.AnsiString,50,filename),
 			};
             string sql = "SELECT COUNT(1) FROM [" + BaseConfigs.GetTablePrefix + "topicidentify] WHERE [name]=@name";
             if (int.Parse(DbHelper.ExecuteScalar(CommandType.Text, sql,parms).ToString()) != 0)  //有相同的名称存在，插入失败
@@ -2124,10 +2126,10 @@ namespace Discuz.Data.Sqlite
         {
             DbParameter[] parms = 
 			{
-                DbHelper.MakeInParam("@uid", (DbType)SqlDbType.Int,4,uid),
-                DbHelper.MakeInParam("@extlist ", (DbType)SqlDbType.VarChar,100,extlist),
-                DbHelper.MakeInParam("@pageindex", (DbType)SqlDbType.Int,4,pageIndex),
-                DbHelper.MakeInParam("@pagesize", (DbType)SqlDbType.Int,4,pageSize)
+                DbHelper.MakeInParam("@uid", DbType.Int32,4,uid),
+                DbHelper.MakeInParam("@extlist ", DbType.AnsiString,100,extlist),
+                DbHelper.MakeInParam("@pageindex", DbType.Int32,4,pageIndex),
+                DbHelper.MakeInParam("@pagesize", DbType.Int32,4,pageSize)
 			};
 
             return DbHelper.ExecuteReader(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "getmyattachmentsbytype", parms);
@@ -2138,7 +2140,7 @@ namespace Discuz.Data.Sqlite
         {
             DbParameter[] parms = 
 			{
-              DbHelper.MakeInParam("@uid", (DbType)SqlDbType.Int,4,uid)
+              DbHelper.MakeInParam("@uid", DbType.Int32,4,uid)
 			};
             string sql = string.Format("SELECT COUNT(1) FROM [{0}] WHERE [UID]=@uid", BaseConfigs.GetTablePrefix + "myattachments");
             return int.Parse(DbHelper.ExecuteScalar(CommandType.Text, sql, parms).ToString());
@@ -2149,8 +2151,8 @@ namespace Discuz.Data.Sqlite
 
             DbParameter[] parms = 
 			{
-              DbHelper.MakeInParam("@uid", (DbType)SqlDbType.Int,4,uid),
-                //DbHelper.MakeInParam("@extlist", (DbType)SqlDbType.VarChar,100,extlist)
+              DbHelper.MakeInParam("@uid", DbType.Int32,4,uid),
+                //DbHelper.MakeInParam("@extlist", DbType.AnsiString,100,extlist)
 			};
             //string sql = string.Format("select count(1) from {0} where exists (select * from {1}split(@extlist,',') where charindex(item, attachment)>0) and [UID]=@uid", BaseConfigs.GetTablePrefix + "myattachments",BaseConfigs.GetTablePrefix);
             string sql = string.Format("select count(1) from {0} where [extname] IN ("+extlist+") and [UID]=@uid", BaseConfigs.GetTablePrefix + "myattachments", BaseConfigs.GetTablePrefix);
@@ -2167,9 +2169,9 @@ namespace Discuz.Data.Sqlite
 
             DbParameter[] parms = 
 			{
-                DbHelper.MakeInParam("@uid", (DbType)SqlDbType.Int,4,uid),
-                DbHelper.MakeInParam("@pageindex", (DbType)SqlDbType.Int,4,pageIndex),
-                DbHelper.MakeInParam("@pagesize", (DbType)SqlDbType.Int,4,pageSize)
+                DbHelper.MakeInParam("@uid", DbType.Int32,4,uid),
+                DbHelper.MakeInParam("@pageindex", DbType.Int32,4,pageIndex),
+                DbHelper.MakeInParam("@pagesize", DbType.Int32,4,pageSize)
 			};
             return DbHelper.ExecuteReader(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "getmyattachments", parms);
         }
@@ -2195,7 +2197,8 @@ namespace Discuz.Data.Sqlite
 
         public IDataReader GetHotTagsListForForum(int count)
         {
-            string sql = string.Format("SELECT TOP {0} * FROM [{1}tags] WHERE [fcount] > 0 AND [orderid] > -1 ORDER BY [orderid], [fcount] DESC", count, BaseConfigs.GetTablePrefix);
+            System.Diagnostics.Debug.WriteLine("GetHotTagsListForForum(int count)");
+            string sql = string.Format("SELECT * FROM [{1}tags] WHERE [fcount] > 0 AND [orderid] > -1 ORDER BY [orderid], [fcount] DESC LIMIT 0,{0}", count, BaseConfigs.GetTablePrefix);
 
             return DbHelper.ExecuteReader(CommandType.Text, sql);
         }
@@ -2295,9 +2298,9 @@ namespace Discuz.Data.Sqlite
         {
             DbParameter[] parms = 
 			{
-				DbHelper.MakeInParam("@orderid", (DbType)SqlDbType.Int,4, orderid),
-                DbHelper.MakeInParam("@color", (DbType)SqlDbType.Char,6, color),
-				DbHelper.MakeInParam("@tagid", (DbType)SqlDbType.Int,4,tagid)
+				DbHelper.MakeInParam("@orderid", DbType.Int32,4, orderid),
+                DbHelper.MakeInParam("@color", DbType.AnsiString,6, color),
+				DbHelper.MakeInParam("@tagid", DbType.Int32,4,tagid)
 			};
             string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "tags] SET [orderid]=@orderid,[color]=@color WHERE [tagid]=@tagid";
             DbHelper.ExecuteNonQuery(CommandType.Text, sql,parms);
@@ -2401,7 +2404,7 @@ namespace Discuz.Data.Sqlite
 
         public IDataReader GetTopicBonusLogs(int tid)
         {
-            DbParameter parm = DbHelper.MakeInParam("@tid", (DbType)SqlDbType.Int, 4, tid);
+            DbParameter parm = DbHelper.MakeInParam("@tid", DbType.Int32, 4, tid);
 
             string sql = string.Format("SELECT [tid],[authorid],[answerid],[answername],[extid],SUM(bonus) AS [bonus] FROM [{0}bonuslog] WHERE [tid]=@tid GROUP BY [answerid],[authorid],[tid],[answername],[extid]", BaseConfigs.GetTablePrefix);
 
@@ -2410,7 +2413,7 @@ namespace Discuz.Data.Sqlite
 
         public IDataReader GetTopicBonusLogsByPost(int tid)
         {
-            DbParameter parm = DbHelper.MakeInParam("@tid", (DbType)SqlDbType.Int, 4, tid);
+            DbParameter parm = DbHelper.MakeInParam("@tid", DbType.Int32, 4, tid);
             string sql = string.Format("SELECT [pid],[isbest],[bonus],[extid] FROM [{0}bonuslog] WHERE [tid]=@tid", BaseConfigs.GetTablePrefix);
 
             return DbHelper.ExecuteReader(CommandType.Text, sql, parm);
@@ -2425,12 +2428,12 @@ namespace Discuz.Data.Sqlite
         public void UpdateLastPost(ForumInfo foruminfo, PostInfo postinfo)
         {
             DbParameter[] parms ={
-                                     DbHelper.MakeInParam("@lasttid", (DbType)SqlDbType.Int, 4, postinfo.Tid),
-                                     DbHelper.MakeInParam("@lasttitle", (DbType)SqlDbType.NChar, 60, postinfo.Topictitle),
-                                     DbHelper.MakeInParam("@lastpost", (DbType)SqlDbType.DateTime, 8, postinfo.Postdatetime),
-                                     DbHelper.MakeInParam("@lastposterid", (DbType)SqlDbType.Int, 4, postinfo.Posterid),
-                                     DbHelper.MakeInParam("@lastposter", (DbType)SqlDbType.NChar, 20, postinfo.Poster),
-                                     DbHelper.MakeInParam("@fid", (DbType)SqlDbType.Int, 4, foruminfo.Fid)
+                                     DbHelper.MakeInParam("@lasttid", DbType.Int32, 4, postinfo.Tid),
+                                     DbHelper.MakeInParam("@lasttitle", DbType.AnsiString, 60, postinfo.Topictitle),
+                                     DbHelper.MakeInParam("@lastpost", DbType.DateTime, 8, postinfo.Postdatetime),
+                                     DbHelper.MakeInParam("@lastposterid", DbType.Int32, 4, postinfo.Posterid),
+                                     DbHelper.MakeInParam("@lastposter", DbType.AnsiString, 20, postinfo.Poster),
+                                     DbHelper.MakeInParam("@fid", DbType.Int32, 4, foruminfo.Fid)
                                  };
             string sql = string.Format("UPDATE [{0}forums] SET [lasttid] = @lasttid, [lasttitle] = @lasttitle, [lastpost] = @lastpost, [lastposterid] = @lastposterid, [lastposter] = @lastposter WHERE [fid] = @fid OR [fid] IN ({1})", BaseConfigs.GetTablePrefix, foruminfo.Parentidlist);
             DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
@@ -2449,7 +2452,7 @@ namespace Discuz.Data.Sqlite
         /// <returns>如果已存在该rewritename则返回true, 否则返回false</returns>
         public bool CheckForumRewriteNameExists(string rewriteName)
         {
-            DbParameter[] parms = { DbHelper.MakeInParam("@rewritename", (DbType)SqlDbType.NVarChar, 20, rewriteName) };
+            DbParameter[] parms = { DbHelper.MakeInParam("@rewritename", DbType.String, 20, rewriteName) };
             return Convert.ToInt32(DbHelper.ExecuteScalar(CommandType.Text, "SELECT COUNT(1) FROM [" + BaseConfigs.GetTablePrefix + "forumfields] WHERE [rewritename]=@rewritename", parms)) >= 1;
         }
 
