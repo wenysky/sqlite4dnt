@@ -12,11 +12,11 @@ namespace Discuz.Data.Sqlite
             DbParameter[] parms = new DbParameter[2];
             if (startdate != "")
             {
-                parms[0] = DbHelper.MakeInParam("@startdate", (DbType)SqlDbType.DateTime, 8, DateTime.Parse(startdate));
+                parms[0] = DbHelper.MakeInParam("@startdate", DbType.DateTime, 8, DateTime.Parse(startdate));
             }
             if (enddate != "")
             {
-                parms[1] = DbHelper.MakeInParam("@enddate", (DbType)SqlDbType.DateTime, 8, DateTime.Parse(enddate).AddDays(1));
+                parms[1] = DbHelper.MakeInParam("@enddate", DbType.DateTime, 8, DateTime.Parse(enddate).AddDays(1));
             }
             return parms;
         }
@@ -121,13 +121,13 @@ namespace Discuz.Data.Sqlite
         public void SetBanip(int ip1,int ip2,int ip3,int ip4,string admin,int dateline,int experation)
         { 
             DbParameter[] parameters = {
-                                            DbHelper.MakeInParam("@ip1",(DbType)SqlDbType.Int,4,ip1),
-                                            DbHelper.MakeInParam("@ip2",(DbType)SqlDbType.Int,4,ip2),
-                                            DbHelper.MakeInParam("@ip3",(DbType)SqlDbType.Int,4,ip3),
-                                            DbHelper.MakeInParam("@ip4",(DbType)SqlDbType.Int,4,ip4),
-                                            DbHelper.MakeInParam("@amdin",(DbType)SqlDbType.VarChar,50,admin),
-                                            DbHelper.MakeInParam("@dateline",(DbType)SqlDbType.Int,4,dateline),
-                                            DbHelper.MakeInParam("@experation",(DbType)SqlDbType.Int,4,experation),
+                                            DbHelper.MakeInParam("@ip1",DbType.Int32,4,ip1),
+                                            DbHelper.MakeInParam("@ip2",DbType.Int32,4,ip2),
+                                            DbHelper.MakeInParam("@ip3",DbType.Int32,4,ip3),
+                                            DbHelper.MakeInParam("@ip4",DbType.Int32,4,ip4),
+                                            DbHelper.MakeInParam("@amdin",DbType.AnsiString,50,admin),
+                                            DbHelper.MakeInParam("@dateline",DbType.Int32,4,dateline),
+                                            DbHelper.MakeInParam("@experation",DbType.Int32,4,experation),
                                        };
             DbHelper.ExecuteNonQuery(CommandType.Text, "INSERT INTO [" + BaseConfigs.GetTablePrefix + "bann](ip1,ip2,ip3,ip4,admin,dateline,experation) VALUES(@ip1,@ip2,@ip3,@ip4,@admin,@dateline,@experation)", parameters);
         }

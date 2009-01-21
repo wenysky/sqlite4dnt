@@ -67,6 +67,12 @@
       <Name>Discuz.Entity</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="database\sqlite_Create.sql" />
+    <None Include="database\sqlite_db.config">
+    </None>
+    <None Include="database\sqlite_insert.sql" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
