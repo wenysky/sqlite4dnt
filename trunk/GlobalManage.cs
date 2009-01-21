@@ -992,7 +992,7 @@ namespace Discuz.Data.Sqlite
             DbParameter[] parms = {
 										 DbHelper.MakeInParam("@ip",DbType.AnsiString,15, ip),
 			                        };
-            return DbHelper.ExecuteDataset(CommandType.Text, "SELECT TOP 1 [errcount], [lastupdate] FROM [" + BaseConfigs.GetTablePrefix + "failedlogins] WHERE [ip]=@ip", parms).Tables[0];
+            return DbHelper.ExecuteDataset(CommandType.Text, string.Format("SELECT `errcount`,`lastupdate` FROM `{0}failedlogins` WHERE `ip`=@ip LIMIT 0,1", BaseConfigs.GetTablePrefix), parms).Tables[0];
         }
 
         /// <summary>
@@ -1044,7 +1044,8 @@ namespace Discuz.Data.Sqlite
             DbParameter[] parms = {
 										 DbHelper.MakeInParam("@ip",DbType.AnsiString,15, ip),
 			};
-            return DbHelper.ExecuteNonQuery(CommandType.Text, "DELETE FROM [" + BaseConfigs.GetTablePrefix + "failedlogins] WHERE [ip]=@ip OR DATEDIFF(n,[lastupdate], GETDATE()) > 15", parms);
+            string sql = string.Format("DELETE FROM `{0}failedlogins` WHERE `ip`=@ip OR (julianday(`lastupdate`)-julianday(datetime('now','localtime'))) > 15", BaseConfigs.GetTablePrefix);
+            return DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
         }
 
         public int GetPostCount(string posttablename)

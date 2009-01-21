@@ -1699,7 +1699,8 @@ namespace Discuz.Data.Sqlite
                                         DbHelper.MakeInParam("@password", DbType.AnsiString, 32, password)
                                     };
             //return DbHelper.ExecuteDataset(CommandType.Text, string.Format("SELECT TOP 1 * FROM [{0}online] WHERE [userid]=@userid AND [password]=@password", BaseConfigs.GetTablePrefix), parms).Tables[0];
-            return DbHelper.ExecuteDataset(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "getonlineuser", parms).Tables[0];
+            string sql = string.Format("SELECT `olid`,`userid`,`ip`,`username`,`nickname`,`password`,`groupid`,`olimg`,`adminid`,`invisible`,`action`,`lastactivity`,`lastposttime`,`lastpostpmtime`,`lastsearchtime`,`lastupdatetime`,`forumid`,`forumname`,`titleid`,`title`,`verifycode`,`newpms`,`newnotices` FROM `{0}online` WHERE `userid`=@userid AND `password`=@password", BaseConfigs.GetTablePrefix);
+            return DbHelper.ExecuteDataset(CommandType.Text, sql, parms).Tables[0];
         }
 
         /// <summary>
@@ -1746,7 +1747,12 @@ namespace Discuz.Data.Sqlite
         /// <returns></returns>
         public int SetUserOnlineState(int uid, int onlinestate)
         {
-            return DbHelper.ExecuteNonQuery(CommandType.Text, string.Format("UPDATE [{0}users] SET [onlinestate]={1},[lastactivity]=GETDATE(),[lastvisit]=GETDATE() WHERE [uid]={2}", BaseConfigs.GetTablePrefix, onlinestate, uid));
+            DbParameter[] parms = {
+									   DbHelper.MakeInParam("@onlinestate",DbType.Int32,4,onlinestate),
+									   DbHelper.MakeInParam("@uid",DbType.Int32,4,uid)
+								   };
+            string sql = string.Format("UPDATE `{0}users` SET `onlinestate`=@onlinestate,`lastactivity`=datetime('now','localtime'),`lastvisit`=datetime('now','localtime') WHERE `uid`=@uid", BaseConfigs.GetTablePrefix);
+            return DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
         }
 
         /// <summary>
@@ -1758,10 +1764,12 @@ namespace Discuz.Data.Sqlite
             DbParameter[] parms = {
 									   DbHelper.MakeInParam("@ip",DbType.AnsiString,15,ip)
 								   };
-            DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "users] SET [onlinestate]=0,[lastactivity]=GETDATE() WHERE [uid] IN (SELECT [userid] FROM [" + BaseConfigs.GetTablePrefix + "online] WHERE [userid]>0 AND [ip]=@ip)", parms);
+            string sql = string.Format("UPDATE `{0}users` SET `onlinestate`=0,`lastactivity`=datetime('now','localtime') WHERE `uid` IN (SELECT `userid` FROM `{0}online` WHERE `userid`>0 AND `ip`=@ip)", BaseConfigs.GetTablePrefix);
+            DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
             if (ip != "0.0.0.0")
             {
-                return DbHelper.ExecuteNonQuery(CommandType.Text, "DELETE FROM [" + BaseConfigs.GetTablePrefix + "online] WHERE [userid]=-1 AND [ip]=@ip", parms);
+                string sql2 = string.Format("DELETE FROM `{0}online` WHERE `userid`=-1 AND `ip`=@ip", BaseConfigs.GetTablePrefix);
+                return DbHelper.ExecuteNonQuery(CommandType.Text, sql2, parms);
             }
             return 0;
         }
@@ -1935,7 +1943,8 @@ namespace Discuz.Data.Sqlite
             DbParameter[] parms = {
 									   DbHelper.MakeInParam("@pmid", DbType.Int32,4, pmid),
 			                        };
-            return DbHelper.ExecuteReader(CommandType.Text, "SELECT TOP 1 * FROM [" + BaseConfigs.GetTablePrefix + "pms] WHERE [pmid]=@pmid", parms);
+            string sql = string.Format("SELECT * FROM `{0}pms` WHERE `pmid`=@pmid LIMIT 0,1", BaseConfigs.GetTablePrefix);
+            return DbHelper.ExecuteReader(CommandType.Text, sql, parms);
         }
 
         /// <summary>
@@ -1954,15 +1963,28 @@ namespace Discuz.Data.Sqlite
             {
                 strwhere = "[new]=1";
             }
+            int recordoffset = (pageindex - 1) * pagesize;
             DbParameter[] parms = {
 									   DbHelper.MakeInParam("@userid",DbType.Int32,4,userid),
 									   DbHelper.MakeInParam("@folder",DbType.Int32,4,folder),
 									   DbHelper.MakeInParam("@pagesize", DbType.Int32,4,pagesize),
-									   DbHelper.MakeInParam("@pageindex",DbType.Int32,4,pageindex),
-									   DbHelper.MakeInParam("@strwhere",DbType.AnsiString,500,strwhere)
-									   
+									   DbHelper.MakeInParam("@recordoffset",DbType.Int32,4,recordoffset)									   
 								   };
-            IDataReader reader = DbHelper.ExecuteReader(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "getpmlist", parms);
+            string sql;
+            string msgformORtoID = "msgtoid";
+            if (folder == 1 || folder == 2)
+            {
+                msgformORtoID = "msgfromid";
+            }
+            if (strwhere != string.Empty)
+            {
+                sql = string.Format("SELECT `pmid`,`msgfrom`,`msgfromid`,`msgto`,`msgtoid`,`folder`,`new`,`subject`,`postdatetime`,`message` FROM `{0}pms` WHERE `{1}`=@userid AND `folder`=@folder AND {2} ORDER BY `pmid` DESC LIMIT @recordoffset,@pagesize", BaseConfigs.GetTablePrefix, msgformORtoID, strwhere);
+            }
+            else
+            {
+                sql = string.Format("SELECT `pmid`,`msgfrom`,`msgfromid`,`msgto`,`msgtoid`,`folder`,`new`,`subject`,`postdatetime`,`message` FROM `{0}pms` WHERE `{1}`=@userid AND `folder`=@folder ORDER BY `pmid` DESC LIMIT @recordoffset,@pagesize", BaseConfigs.GetTablePrefix, msgformORtoID);
+            }
+            IDataReader reader = DbHelper.ExecuteReader(CommandType.Text, sql, parms);
             return reader;
         }
 
@@ -1975,12 +1997,47 @@ namespace Discuz.Data.Sqlite
         /// <returns>短消息数量</returns>
         public int GetPrivateMessageCount(int userid, int folder, int state)
         {
+            string sql;
+            if (folder == 1)
+            {
+                sql = string.Format("SELECT COUNT(pmid) AS `pmcount` FROM `{0}pms` WHERE (`msgtoid`=@userid AND `folder`=0) OR (`msgfromid` = @userid AND `folder` = 1) OR (`msgfromid` = @userid AND `folder` = 2)", BaseConfigs.GetTablePrefix);
+            }
+            else if (folder == 0)
+            {
+                if (state == -1)
+                {
+                    sql = string.Format("SELECT COUNT(pmid) AS `pmcount` FROM `{0}pms` WHERE `msgtoid`=@userid AND `folder`=@folder", BaseConfigs.GetTablePrefix);
+                }
+                else if (state == 2)
+                {
+                    sql = string.Format("SELECT COUNT(pmid) AS `pmcount` FROM `{0}pms` WHERE `msgtoid`=@userid AND `folder`=@folder AND `new`=1 AND (julianday(datetime('now','localtime'))-`postdatetime`)", BaseConfigs.GetTablePrefix);
+                }
+                else
+                {
+                    sql = string.Format("SELECT COUNT(pmid) AS `pmcount` FROM `{0}pms` WHERE `msgtoid`=@userid AND `folder`=@folder AND `new`=@state", BaseConfigs.GetTablePrefix);
+                }
+            }
+            else
+            {
+                if (state == -1)
+                {
+                    sql = string.Format("SELECT COUNT(pmid) AS `pmcount` FROM `{0}pms` WHERE `msgfromid`=@userid AND `folder`=@folder", BaseConfigs.GetTablePrefix);
+                }
+                else if (state == 2)
+                {
+                    sql = string.Format("SELECT COUNT(pmid) AS `pmcount` FROM `{0}pms` WHERE `msgfromid`=@userid AND `folder`=@folder AND `new`=1 AND (julianday(datetime('now','localtime'))-`postdatetime`)<3", BaseConfigs.GetTablePrefix);
+                }
+                else
+                {
+                    sql = string.Format("SELECT COUNT(pmid) AS `pmcount` FROM `{0}pms` WHERE `msgfromid`=@userid AND `folder`=@folder AND `new`=@state", BaseConfigs.GetTablePrefix);
+                }
+            }
             DbParameter[] parms = {
 									   DbHelper.MakeInParam("@userid",DbType.Int32,4,userid),
 									   DbHelper.MakeInParam("@folder",DbType.Int32,4,folder),								   
 									   DbHelper.MakeInParam("@state",DbType.Int32,4,state)
 								   };
-            return Utils.StrToInt(DbHelper.ExecuteScalar(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "getpmcount", parms).ToString(), 0);
+            return Utils.StrToInt(DbHelper.ExecuteScalar(CommandType.Text, sql, parms).ToString(), 0);
         }
 
         /// <summary>
@@ -2021,22 +2078,38 @@ namespace Discuz.Data.Sqlite
         /// <param name="__privatemessageinfo">短消息内容</param>
         /// <param name="savetosentbox">设置短消息是否在发件箱保留(0为不保留, 1为保留)</param>
         /// <returns>短消息在数据库中的pmid</returns>
-        public int CreatePrivateMessage(PrivateMessageInfo privatemessageinfo, int savetosentbox)
+        public int CreatePrivateMessage(PrivateMessageInfo pminfo, int savetosentbox)
         {
+            System.Diagnostics.Debug.WriteLine("CreatePrivateMessage(PrivateMessageInfo pminfo, int savetosentbox)");
+            if (pminfo.Folder != 0)
+            {
+                pminfo.Msgfrom = pminfo.Msgto;
+            }
+            else
+            {
+                DbHelper.ExecuteNonQuery(CommandType.Text, string.Format("UPDATE `{0}users` SET `newpmcount`=`newpmcount`+1,`newpm`=1 WHERE `uid`={1}", BaseConfigs.GetTablePrefix, pminfo.Msgtoid));
+            }
+
             DbParameter[] parms = {
-									   DbHelper.MakeInParam("@pmid",DbType.Int32,4,privatemessageinfo.Pmid),
-									   DbHelper.MakeInParam("@msgfrom",DbType.String,20,privatemessageinfo.Msgfrom),
-									   DbHelper.MakeInParam("@msgfromid",DbType.Int32,4,privatemessageinfo.Msgfromid),
-									   DbHelper.MakeInParam("@msgto",DbType.String,20,privatemessageinfo.Msgto),
-									   DbHelper.MakeInParam("@msgtoid",DbType.Int32,4,privatemessageinfo.Msgtoid),
-									   DbHelper.MakeInParam("@folder",DbType.Int16,2,privatemessageinfo.Folder),
-									   DbHelper.MakeInParam("@new",DbType.Int32,4,privatemessageinfo.New),
-									   DbHelper.MakeInParam("@subject",DbType.String,80,privatemessageinfo.Subject),
-									   DbHelper.MakeInParam("@postdatetime",DbType.DateTime,8,DateTime.Parse(privatemessageinfo.Postdatetime)),
-									   DbHelper.MakeInParam("@message",DbType.String,0,privatemessageinfo.Message),
-									   DbHelper.MakeInParam("@savetosentbox",DbType.Int32,4,savetosentbox)
+									   DbHelper.MakeInParam("@pmid",DbType.Int32,4,pminfo.Pmid),
+									   DbHelper.MakeInParam("@msgfrom",DbType.String,20,pminfo.Msgfrom),
+									   DbHelper.MakeInParam("@msgfromid",DbType.Int32,4,pminfo.Msgfromid),
+									   DbHelper.MakeInParam("@msgto",DbType.String,20,pminfo.Msgto),
+									   DbHelper.MakeInParam("@msgtoid",DbType.Int32,4,pminfo.Msgtoid),
+									   DbHelper.MakeInParam("@folder",DbType.Int16,2,pminfo.Folder),
+									   DbHelper.MakeInParam("@new",DbType.Int32,4,pminfo.New),
+									   DbHelper.MakeInParam("@subject",DbType.String,80,pminfo.Subject),
+									   DbHelper.MakeInParam("@postdatetime",DbType.DateTime,8,DateTime.Parse(pminfo.Postdatetime)),
+									   DbHelper.MakeInParam("@message",DbType.String,0,pminfo.Message)
 								   };
-            return Utils.StrToInt(DbHelper.ExecuteScalar(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "createpm", parms).ToString(), -1);
+            string sql = string.Format("INSERT INTO `{0}pms` (`msgfrom`,`msgfromid`,`msgto`,`msgtoid`,`folder`,`new`,`subject`,`postdatetime`,`message`) VALUES	(@msgfrom,@msgfromid,@msgto,@msgtoid,@folder,@new,@subject,@postdatetime,@message);select last_insert_rowid() AS pmid", BaseConfigs.GetTablePrefix);
+            int pmid = Utils.StrToInt(DbHelper.ExecuteScalar(CommandType.Text, sql, parms).ToString(), -1);
+
+            if (savetosentbox == 1 && pminfo.Folder == 0)
+            {
+                DbHelper.ExecuteNonQuery(CommandType.Text, string.Format("INSERT INTO `{0}pms` (`msgfrom`,`msgfromid`,`msgto`,`msgtoid`,`folder`,`new`,`subject`,`postdatetime`,`message`) VALUES(@msgfrom,@msgfromid,@msgto,@msgtoid,1,@new,@subject,@postdatetime,@message)", BaseConfigs.GetTablePrefix), parms);
+            }
+            return pmid;
         }
 
         /// <summary>
@@ -2352,8 +2425,8 @@ namespace Discuz.Data.Sqlite
             DbParameter[] parms = {
 									   DbHelper.MakeInParam("@uid", DbType.Int32,4, uid)
 			};
-
-            return DbHelper.ExecuteReader(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "getuserinfo", parms);
+            string sql = string.Format("SELECT `{0}users`.*, `{0}userfields`.* FROM `{0}users` LEFT JOIN `{0}userfields` ON `{0}users`.`uid`=`{0}userfields`.`uid` WHERE `{0}users`.`uid`=@uid LIMIT 0,1", BaseConfigs.GetTablePrefix);
+            return DbHelper.ExecuteReader(CommandType.Text, sql, parms);
         }
 
         /// <summary>
@@ -2395,8 +2468,8 @@ namespace Discuz.Data.Sqlite
             DbParameter[] parms = {
 									   DbHelper.MakeInParam("@uid", DbType.Int32,4, uid),
 			};
-
-            return DbHelper.ExecuteReader(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "getshortuserinfo", parms);
+            string sql = string.Format("SELECT * FROM `{0}users` WHERE `uid`=@uid LIMIT 0,1", BaseConfigs.GetTablePrefix);
+            return DbHelper.ExecuteReader(CommandType.Text, sql, parms);
 
         }
 
@@ -2589,7 +2662,8 @@ namespace Discuz.Data.Sqlite
 									   DbHelper.MakeInParam("@password",DbType.AnsiString,32, originalpassword ? Utils.MD5(password) : password),
 									   DbHelper.MakeInParam("@secques",DbType.AnsiString,8, secques)
 								   };
-            return DbHelper.ExecuteReader(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "checkpasswordandsecques", parms);
+            string sql = string.Format("SELECT `uid` FROM `{0}users` WHERE `username`=@username AND `password`=@password AND `secques`=@secques LIMIT 0,1", BaseConfigs.GetTablePrefix);
+            return DbHelper.ExecuteReader(CommandType.Text, sql, parms);
         }
 
         /// <summary>
@@ -2605,7 +2679,8 @@ namespace Discuz.Data.Sqlite
 									   DbHelper.MakeInParam("@username",DbType.AnsiString,20, username),
 									   DbHelper.MakeInParam("@password",DbType.AnsiString,32, originalpassword ? Utils.MD5(password) : password)
 								   };
-            return DbHelper.ExecuteReader(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "checkpasswordbyusername", parms);
+            string sql = string.Format("SELECT `uid`,`groupid`,`adminid` FROM `dnt_users` WHERE `username`=@username AND `password`=@password LIMIT 0,1", BaseConfigs.GetTablePrefix);
+            return DbHelper.ExecuteReader(CommandType.Text, sql, parms);
         }
 
         /// <summary>
@@ -2642,7 +2717,8 @@ namespace Discuz.Data.Sqlite
 									   DbHelper.MakeInParam("@uid",DbType.Int32,4,uid),
 									   DbHelper.MakeInParam("@password",DbType.AnsiString,32, originalpassword ? Utils.MD5(password) : password)
 								   };
-            return DbHelper.ExecuteReader(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "checkpasswordbyuid", parms);
+            string sql = string.Format("SELECT `uid`, `groupid`, `adminid` FROM `{0}users` WHERE `uid`=@uid AND `password`=@password LIMIT 0,1", BaseConfigs.GetTablePrefix);
+            return DbHelper.ExecuteReader(CommandType.Text, sql, parms);
         }
 
         /// <summary>
@@ -3022,7 +3098,8 @@ namespace Discuz.Data.Sqlite
 									   DbHelper.MakeInParam("@uid", DbType.Int32, 4, uid),
 									   DbHelper.MakeInParam("@ip", DbType.AnsiString,15, ip)
 								   };
-            DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "users] SET [lastvisit]=GETDATE(), [lastip]=@ip WHERE [uid] =@uid", parms);
+            string sql = string.Format("UPDATE `{0}users` SET `lastvisit`=datetime('now','localtime'), `lastip`=@ip WHERE `uid`=@uid", BaseConfigs.GetTablePrefix);
+            DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
         }
 
         public void UpdateUserOnlineStateAndLastActivity(string uidlist, int onlinestate, string activitytime)
@@ -3282,7 +3359,8 @@ namespace Discuz.Data.Sqlite
 
             //string strDelTimeOutSql = "";
             DbParameter param = DbHelper.MakeInParam("@expires", DbType.DateTime, 8, DateTime.Now.AddMinutes(timeout * -1));
-            IDataReader dr = DbHelper.ExecuteReader(CommandType.StoredProcedure, string.Format("{0}getexpiredonlineuserlist", BaseConfigs.GetTablePrefix), param);
+            string sql = string.Format("SELECT `olid`, `userid` FROM `{0}online` WHERE `lastupdatetime`<@expires", BaseConfigs.GetTablePrefix);
+            IDataReader dr = DbHelper.ExecuteReader(CommandType.Text, sql, param);
             while (dr.Read())
             {
                 timeoutStrBuilder.Append(",");
@@ -3299,13 +3377,15 @@ namespace Discuz.Data.Sqlite
             {
                 timeoutStrBuilder.Remove(0, 1);
                 //strDelTimeOutSql = string.Format("DELETE FROM [{0}online] WHERE [olid] IN ({1});", BaseConfigs.GetTablePrefix, timeoutStrBuilder.ToString());
-                DbHelper.ExecuteNonQuery(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "deleteonlineusers", DbHelper.MakeInParam("@olidlist", DbType.AnsiString, 5000, timeoutStrBuilder.ToString()));
+                string sql2 = string.Format("DELETE FROM `{0}online` WHERE `olid` IN ({1})", BaseConfigs.GetTablePrefix, timeoutStrBuilder.ToString());
+                DbHelper.ExecuteNonQuery(CommandType.Text, sql2);
             }
             if (memberStrBuilder.Length > 0)
             {
                 memberStrBuilder.Remove(0, 1);
                 //strDelTimeOutSql = string.Format("{0}UPDATE [{1}users] SET [onlinestate]=0,[lastactivity]=GETDATE() WHERE [uid] IN ({2});", strDelTimeOutSql, BaseConfigs.GetTablePrefix, memberStrBuilder.ToString());
-                DbHelper.ExecuteNonQuery(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "updateuseronlinestates", DbHelper.MakeInParam("@uidlist", DbType.AnsiString, 5000, memberStrBuilder.ToString()));
+                string sql3 = string.Format("UPDATE `{0}users` SET `onlinestate`=0,`lastactivity`=datetime('now','localtime') WHERE `uid` IN ({1})", BaseConfigs.GetTablePrefix, memberStrBuilder.ToString());
+                DbHelper.ExecuteNonQuery(CommandType.Text, sql3);
             }
             //if (strDelTimeOutSql != string.Empty)
             //    DbHelper.ExecuteNonQuery(strDelTimeOutSql);
