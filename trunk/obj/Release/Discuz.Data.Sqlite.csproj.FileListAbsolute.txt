@@ -1,0 +1,15 @@
+F:\Doctments\Works\Comsenz\DotNet\Discuz!NT\3\Discuz.Data.Sqlite\obj\Release\ResolveAssemblyReference.cache
+F:\Doctments\Works\Comsenz\DotNet\Discuz!NT\3\Discuz.Data.Sqlite\bin\Release\Discuz.Data.Sqlite.dll
+F:\Doctments\Works\Comsenz\DotNet\Discuz!NT\3\Discuz.Data.Sqlite\bin\Release\Discuz.Data.Sqlite.pdb
+F:\Doctments\Works\Comsenz\DotNet\Discuz!NT\3\Discuz.Data.Sqlite\bin\Release\Discuz.Common.dll
+F:\Doctments\Works\Comsenz\DotNet\Discuz!NT\3\Discuz.Data.Sqlite\bin\Release\Discuz.Config.dll
+F:\Doctments\Works\Comsenz\DotNet\Discuz!NT\3\Discuz.Data.Sqlite\bin\Release\Discuz.Data.dll
+F:\Doctments\Works\Comsenz\DotNet\Discuz!NT\3\Discuz.Data.Sqlite\bin\Release\Discuz.Entity.dll
+F:\Doctments\Works\Comsenz\DotNet\Discuz!NT\3\Discuz.Data.Sqlite\bin\Release\System.Data.SQLite.dll
+F:\Doctments\Works\Comsenz\DotNet\Discuz!NT\3\Discuz.Data.Sqlite\bin\Release\Newtonsoft.Json.dll
+F:\Doctments\Works\Comsenz\DotNet\Discuz!NT\3\Discuz.Data.Sqlite\bin\Release\Discuz.Config.pdb
+F:\Doctments\Works\Comsenz\DotNet\Discuz!NT\3\Discuz.Data.Sqlite\bin\Release\Discuz.Common.pdb
+F:\Doctments\Works\Comsenz\DotNet\Discuz!NT\3\Discuz.Data.Sqlite\bin\Release\Discuz.Entity.pdb
+F:\Doctments\Works\Comsenz\DotNet\Discuz!NT\3\Discuz.Data.Sqlite\bin\Release\Discuz.Data.pdb
+F:\Doctments\Works\Comsenz\DotNet\Discuz!NT\3\Discuz.Data.Sqlite\obj\Release\Discuz.Data.Sqlite.dll
+F:\Doctments\Works\Comsenz\DotNet\Discuz!NT\3\Discuz.Data.Sqlite\obj\Release\Discuz.Data.Sqlite.pdb
