@@ -2,7 +2,7 @@ using System;
 using System.Text;
 using System.Data;
 using System.Data.Common;
-using System.Data.SqlClient;
+using System.Data.SQLite;
 using Discuz.Data;
 using Discuz.Config;
 using Discuz.Common;
@@ -61,7 +61,7 @@ namespace Discuz.Data.Sqlite
                                         DbHelper.MakeInParam("@note", DbType.String, 200, note),
                                         DbHelper.MakeInParam("@logo", DbType.String, 100, logo)
                                     };
-            string sql = "INSERT INTO [" + BaseConfigs.GetTablePrefix + "forumlinks] ([displayorder], [name],[url],[note],[logo]) VALUES (@displayorder,@name,@url,@note,@logo)";
+            string sql = string.Format("INSERT INTO `{0}forumlinks` (`displayorder`, `name`,`url`,`note`,`logo`) VALUES (@displayorder,@name,@url,@note,@logo)", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
         }
 
@@ -71,7 +71,7 @@ namespace Discuz.Data.Sqlite
         /// <returns></returns>
         public string GetForumLinks()
         {
-            return "SELECT * FROM [" + BaseConfigs.GetTablePrefix + "forumlinks]";
+            return string.Format("SELECT * FROM `{0}forumlinks`", BaseConfigs.GetTablePrefix);
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace Discuz.Data.Sqlite
         /// <returns></returns>
         public int DeleteForumLink(string forumlinkidlist)
         {
-            string sql = "DELETE FROM [" + BaseConfigs.GetTablePrefix + "forumlinks] WHERE [id] IN (" + forumlinkidlist + ")";
+            string sql = string.Format("DELETE FROM `{0}forumlinks` WHERE `id` IN ({1})", BaseConfigs.GetTablePrefix, forumlinkidlist);
             return DbHelper.ExecuteNonQuery(CommandType.Text, sql);
         }
 
@@ -105,7 +105,7 @@ namespace Discuz.Data.Sqlite
                                         DbHelper.MakeInParam("@note", DbType.String, 200, note),
                                         DbHelper.MakeInParam("@logo", DbType.String, 100, logo)
                                     };
-            string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "forumlinks] SET [displayorder]=@displayorder,[name]=@name,[url]=@url,[note]=@note,[logo]=@logo WHERE [id]=@id";
+            string sql = "UPDATE `{0}forumlinks` SET `displayorder`=@displayorder,`name`=@name,`url`=@url,`note`=@note,`logo`=@logo WHERE `id`=@id";
             return DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
         }
 
@@ -116,8 +116,8 @@ namespace Discuz.Data.Sqlite
         /// <returns></returns>
         public DataTable GetForumIndexListTable()
         {
-            string commandText = string.Format("{0}getindexforumlist", BaseConfigs.GetTablePrefix);
-            return DbHelper.ExecuteDataset(CommandType.StoredProcedure, commandText).Tables[0];
+            string sql = string.Format("SELECT CASE WHEN (julianday('now','localtime')-julianday(`lastpost`,'localtime'))*1440<600 THEN 'new' ELSE 'old' END AS `havenew`,`{0}forums`.*, `{0}forumfields`.* FROM `{0}forums` LEFT JOIN `{0}forumfields` ON `{0}forums`.`fid`=`{0}forumfields`.`fid` WHERE `{0}forums`.`parentid` NOT IN (SELECT `fid` FROM `{0}forums` WHERE `status`<1 AND `layer`=0) AND `{0}forums`.`status`>0 AND `layer`<=1 ORDER BY `displayorder`", BaseConfigs.GetTablePrefix);
+            return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0];
         }
          
         /// <summary>
@@ -127,7 +127,7 @@ namespace Discuz.Data.Sqlite
         public IDataReader GetForumIndexList()
         {
             System.Diagnostics.Debug.WriteLine("GetForumIndexList()");
-            string commandText = string.Format("SELECT CASE WHEN (julianday('now','localtime')-julianday([lastpost],'localtime'))<600 THEN 'new' ELSE 'old' END AS [havenew],[{0}forums].*, [{0}forumfields].* FROM [{0}forums] LEFT JOIN [{0}forumfields] ON [{0}forums].[fid]=[{0}forumfields].[fid] WHERE [{0}forums].[parentid] NOT IN (SELECT [fid] FROM [{0}forums] WHERE [status] < 1 AND [layer] = 0) AND [{0}forums].[status] > 0 AND [layer] <= 1 ORDER BY [displayorder]", BaseConfigs.GetTablePrefix);
+            string commandText = string.Format("SELECT CASE WHEN (julianday('now','localtime')-julianday(`lastpost`,'localtime'))*1440<600 THEN 'new' ELSE 'old' END AS `havenew`,`{0}forums`.*, `{0}forumfields`.* FROM `{0}forums` LEFT JOIN `{0}forumfields` ON `{0}forums`.`fid`=`{0}forumfields`.`fid` WHERE `{0}forums`.`parentid` NOT IN (SELECT `fid` FROM `{0}forums` WHERE `status`<1 AND `layer`=0) AND `{0}forums`.`status`>0 AND `layer`<=1 ORDER BY `displayorder`", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteReader(CommandType.Text, commandText);
         }
 
@@ -137,7 +137,7 @@ namespace Discuz.Data.Sqlite
         /// <returns></returns>
         public DataTable GetArchiverForumIndexList()
         {
-            string commandText = string.Format("SELECT [{0}forums].[fid], [{0}forums].[name],[{0}forums].[parentidlist], [{0}forums].[status],[{0}forums].[layer], [{0}forumfields].[viewperm] FROM [{0}forums] LEFT JOIN [{0}forumfields] ON [{0}forums].[fid]=[{0}forumfields].[fid]   ORDER BY [displayorder]", BaseConfigs.GetTablePrefix);
+            string commandText = string.Format("SELECT `{0}forums`.`fid`, `{0}forums`.`name`,`{0}forums`.`parentidlist`,`{0}forums`.`status`,`{0}forums`.`layer`,`{0}forumfields`.`viewperm` FROM `{0}forums` LEFT JOIN `{0}forumfields` ON `{0}forums`.`fid`=`{0}forumfields`.`fid` ORDER BY `displayorder`", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteDataset(CommandType.Text, commandText).Tables[0];
         }
 
@@ -152,7 +152,7 @@ namespace Discuz.Data.Sqlite
 									   DbHelper.MakeInParam("@fid", DbType.Int32,4, fid)
 								   };
 
-            string commandText = string.Format("SELECT CASE WHEN DATEDIFF(n, [lastpost], GETDATE())<600 THEN 'new' ELSE 'old' END AS [havenew],[{0}forums].*, [{0}forumfields].* FROM [{0}forums] LEFT JOIN [{0}forumfields] ON [{0}forums].[fid]=[{0}forumfields].[fid] WHERE [parentid] = @fid AND [status] > 0 ORDER BY [displayorder]", BaseConfigs.GetTablePrefix);
+            string commandText = string.Format("SELECT CASE WHEN (julianday('now','localtime')-julianday(`lastpost`,'localtime'))*1440<600 THEN 'new' ELSE 'old' END AS `havenew`,`{0}forums`.*, `{0}forumfields`.* FROM `{0}forums` LEFT JOIN `{0}forumfields` ON `{0}forums`.`fid`=`{0}forumfields`.`fid` WHERE `parentid` = @fid AND `status` > 0 ORDER BY `displayorder`", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteReader(CommandType.Text, commandText, parms);
         }
 
@@ -167,7 +167,7 @@ namespace Discuz.Data.Sqlite
 									   DbHelper.MakeInParam("@fid", DbType.Int32,4, fid)
 								   };
 
-            string commandText = string.Format("SELECT CASE WHEN DATEDIFF(n, [lastpost], GETDATE())<600 THEN 'new' ELSE 'old' END AS [havenew],[{0}forums].*, [{0}forumfields].* FROM [{0}forums] LEFT JOIN [{0}forumfields] ON [{0}forums].[fid]=[{0}forumfields].[fid] WHERE [parentid] = @fid AND [status] > 0 ORDER BY [displayorder]", BaseConfigs.GetTablePrefix);
+            string commandText = string.Format("SELECT CASE WHEN (julianday('now','localtime')-julianday(`lastpost`,'localtime'))*1440<600 THEN 'new' ELSE 'old' END AS `havenew`,`{0}forums`.*, `{0}forumfields`.* FROM `{0}forums` LEFT JOIN `{0}forumfields` ON `{0}forums`.`fid`=`{0}forumfields`.`fid` WHERE `parentid`=@fid AND `status`>0 ORDER BY `displayorder`", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteDataset(CommandType.Text, commandText, parms).Tables[0];
         }
 
@@ -178,7 +178,7 @@ namespace Discuz.Data.Sqlite
         public DataTable GetForumsTable()
         {
             System.Diagnostics.Debug.WriteLine("GetForumsTable()");
-            string commandText = string.Format("SELECT [{0}forums].*, [{0}forumfields].* FROM [{0}forums] LEFT JOIN [{0}forumfields] ON [{0}forums].[fid]=[{0}forumfields].[fid] ORDER BY [displayorder]", BaseConfigs.GetTablePrefix);
+            string commandText = string.Format("SELECT `{0}forums`.*, `{0}forumfields`.* FROM `{0}forums` LEFT JOIN `{0}forumfields` ON `{0}forums`.`fid`=`{0}forumfields`.`fid` ORDER BY `displayorder`", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteDataset(CommandType.Text, commandText).Tables[0];
         }
 
@@ -190,90 +190,97 @@ namespace Discuz.Data.Sqlite
         public int SetRealCurrentTopics(int fid)
         {
             string commandText =
-                string.Format("UPDATE {0}forums SET [curtopics] = (SELECT COUNT(tid) FROM {0}topics WHERE [displayorder] >= 0 AND [fid]={1}) WHERE [fid]={1}", BaseConfigs.GetTablePrefix, fid);
+                string.Format("UPDATE {0}forums SET `curtopics`=(SELECT COUNT(tid) FROM {0}topics WHERE `displayorder`>=0 AND `fid`={1}) WHERE `fid`={1}", BaseConfigs.GetTablePrefix, fid);
             return DbHelper.ExecuteNonQuery(CommandType.Text, commandText);
         }
 
         public DataTable GetForumListTable()
         {
-            DataTable dt = DbHelper.ExecuteDataset(CommandType.Text, string.Format("SELECT [name], [fid] FROM [{0}forums] WHERE [{0}forums].[parentid] NOT IN (SELECT fid FROM [{0}forums] WHERE [status] < 1 AND [layer] = 0) AND [status] > 0 AND [displayorder] >=0 ORDER BY [displayorder]", BaseConfigs.GetTablePrefix)).Tables[0];
+            string sql = string.Format("SELECT `name`,`fid` FROM `{0}forums` WHERE `{0}forums`.`parentid` NOT IN (SELECT fid FROM `{0}forums` WHERE `status`<1 AND `layer`=0) AND `status`>0 AND `displayorder`>=0 ORDER BY `displayorder`", BaseConfigs.GetTablePrefix);
+            DataTable dt = DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0];
 
             return dt;
         }
 
         public string GetTemplates()
         {
-            return "SELECT [templateid],[name] FROM [" + BaseConfigs.GetTablePrefix + "templates] ";
-
+            return string.Format("SELECT `templateid`,`name` FROM `{0}templates`", BaseConfigs.GetTablePrefix);
         }
 
         public DataTable GetUserGroupsTitle()
         {
-            string sql = "SELECT [groupid],[grouptitle] FROM [" + BaseConfigs.GetTablePrefix + "usergroups]  ORDER BY [groupid] ASC";
+            string sql = string.Format("SELECT `groupid`,`grouptitle` FROM `{0}usergroups` ORDER BY `groupid` ASC", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0];
         }
 
         public DataTable GetUserGroupMaxspacephotosize()
         {
-            string sql = "SELECT [groupid],[grouptitle],[maxspacephotosize] FROM [" + BaseConfigs.GetTablePrefix + "usergroups]  ORDER BY [groupid] ASC";
+            string sql = string.Format("SELECT `groupid`,`grouptitle`,`maxspacephotosize` FROM `{0}usergroups`  ORDER BY `groupid` ASC", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0];
         }
 
         public DataTable GetUserGroupMaxspaceattachsize()
         {
-            string sql = "SELECT [groupid],[grouptitle],[maxspaceattachsize] FROM [" + BaseConfigs.GetTablePrefix + "usergroups]  ORDER BY [groupid] ASC";
+            string sql = string.Format("SELECT `groupid`,`grouptitle`,`maxspaceattachsize` FROM `{0}usergroups` ORDER BY `groupid` ASC", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0];
         }
 
         public DataTable GetAttachTypes()
         {
-            string sql = "SELECT [id],[extension] FROM [" + BaseConfigs.GetTablePrefix + "attachtypes]  ORDER BY [id] ASC";
+            string sql = string.Format("SELECT `id`,`extension` FROM `{0}attachtypes` ORDER BY `id` ASC", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0];
         }
 
         public DataTable GetForums()
         {
-            string sql = "SELECT * FROM [" + BaseConfigs.GetTablePrefix + "forums] ORDER BY [displayorder] ASC";
+            string sql = string.Format("SELECT * FROM `{0}forums` ORDER BY `displayorder` ASC", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0];
         }
 
         public string GetForumsTree()
         {
-            return "SELECT [fid],[name],[parentid] FROM [" + BaseConfigs.GetTablePrefix + "forums] ORDER BY [displayorder] ASC";
+            return string.Format("SELECT `fid`,`name`,`parentid` FROM `{0}forums` ORDER BY `displayorder` ASC", BaseConfigs.GetTablePrefix);
         }
 
         public int GetForumsMaxDisplayOrder()
         {
-            return Utils.StrToInt(DbHelper.ExecuteDataset(CommandType.Text, "SELECT MAX(displayorder) FROM [" + BaseConfigs.GetTablePrefix + "forums]").Tables[0].Rows[0][0], 0) + 1;
+            string sql=string.Format("SELECT MAX(displayorder) FROM `{0}forums`", BaseConfigs.GetTablePrefix);
+            return Utils.StrToInt(DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0].Rows[0][0], 0) + 1;
         }
 
         public DataTable GetForumsMaxDisplayOrder(int parentid)
         {
-            return DbHelper.ExecuteDataset(CommandType.Text, "SELECT MAX([displayorder]) FROM [" + BaseConfigs.GetTablePrefix + "forums]  WHERE [parentid]=" + parentid).Tables[0];
+            string sql = string.Format("SELECT MAX(`displayorder`) FROM `{0}forums` WHERE `parentid`={1}", BaseConfigs.GetTablePrefix, parentid);
+            return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0];
         }
         public void UpdateForumsDisplayOrder(int minDisplayOrder)
         {
-            DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [displayorder]=[displayorder]+1  WHERE [displayorder]>" + minDisplayOrder.ToString());
+            string sql = string.Format("UPDATE `{0}forums` SET `displayorder`=`displayorder`+1  WHERE `displayorder`>{1}", BaseConfigs.GetTablePrefix, minDisplayOrder);
+            DbHelper.ExecuteNonQuery(CommandType.Text, sql);
         }
 
         public void UpdateSubForumCount(int fid)
         {
-            DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [subforumcount]=[subforumcount]+1  WHERE [fid]=" + fid.ToString());
+            string sql = string.Format("UPDATE `{0}forums` SET `subforumcount`=`subforumcount`+1  WHERE `fid`={1}", BaseConfigs.GetTablePrefix, fid);
+            DbHelper.ExecuteNonQuery(CommandType.Text, sql);
         }
 
         public DataRow GetForum(int fid)
         {
-            return DbHelper.ExecuteDataset(CommandType.Text, "SELECT TOP 1 * FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE [fid]=" + fid.ToString()).Tables[0].Rows[0];
+            string sql = string.Format("SELECT * FROM `{0}forums` WHERE `fid`={1} LIMIT 0,1", BaseConfigs.GetTablePrefix, fid);
+            return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0].Rows[0];
         }
 
         public DataRowCollection GetModerators(int fid)
         {
-            return DbHelper.ExecuteDataset(CommandType.Text, "SELECT [username] FROM [" + BaseConfigs.GetTablePrefix + "users] WHERE [uid] IN(SELECT [uid] FROM [" + BaseConfigs.GetTablePrefix + "moderators] WHERE [inherited]=1 AND [fid]=" + fid + ")").Tables[0].Rows;
+            string sql = string.Format("SELECT `username` FROM `{0}users` WHERE `uid` IN(SELECT `uid` FROM `{0}moderators` WHERE `inherited`=1 AND `fid`={1})", BaseConfigs.GetTablePrefix, fid);
+            return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0].Rows;
         }
 
         public DataTable GetTopForum(int fid)
         {
-            return DbHelper.ExecuteDataset(CommandType.Text, "SELECT TOP 1 [fid] FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE [parentid]=0 AND [layer]=0 AND [fid]=" + fid).Tables[0];
+            string sql = string.Format("SELECT `fid` FROM `{0}forums` WHERE `parentid`=0 AND `layer`=0 AND `fid`={1} LIMIT 0,1", BaseConfigs.GetTablePrefix, fid);
+            return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0];
         }
 
         public int UpdateForum(int fid, string name, int subforumcount, int displayorder)
@@ -284,68 +291,76 @@ namespace Discuz.Data.Sqlite
                                         DbHelper.MakeInParam("@subforumcount", DbType.Int32, 4, subforumcount),
                                         DbHelper.MakeInParam("@displayorder", DbType.Int32, 4, displayorder) 
                                     };
-            string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [name]=@name,[subforumcount]=@subforumcount ,[displayorder]=@displayorder WHERE [fid]=@fid";
+            string sql = "UPDATE `{0}forums` SET `name`=@name,`subforumcount`=@subforumcount,`displayorder`=@displayorder WHERE `fid`=@fid";
             return DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
         }
 
         public DataTable GetForumField(int fid, string fieldname)
         {
-            return DbHelper.ExecuteDataset(CommandType.Text, "SELECT TOP 1 [" + fieldname + "] FROM [" + BaseConfigs.GetTablePrefix + "forumfields] WHERE [fid]=" + fid).Tables[0];
+            string sql = string.Format("SELECT `{1}` FROM `{0}forumfields` WHERE `fid`={2} LIMIT 0,1", BaseConfigs.GetTablePrefix, fieldname, fid);
+            return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0];
         }
 
         public int UpdateForumField(int fid, string fieldname)
         {
-            return DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forumfields] SET [" + fieldname + "]='' WHERE [fid]=" + fid);
+            string sql = string.Format("UPDATE `{0}forumfields` SET `{1}`='' WHERE `fid`={2}", BaseConfigs.GetTablePrefix, fieldname, fid);
+            return DbHelper.ExecuteNonQuery(CommandType.Text, sql);
         }
 
         public int UpdateForumField(int fid, string fieldname, string fieldvalue)
         {
-            return DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forumfields] SET [" + fieldname + "]='" + fieldvalue + "' WHERE [fid]=" + fid);
+            string sql = string.Format("UPDATE `{0}forumfields` SET `{1}`='{2}' WHERE `fid`={3}", BaseConfigs.GetTablePrefix, fieldname, fieldvalue, fid);
+            return DbHelper.ExecuteNonQuery(CommandType.Text, sql);
         }
 
         public DataRowCollection GetDatechTableIds()
         {
-            return DbHelper.ExecuteDataset(CommandType.Text, "SELECT id FROM [" + BaseConfigs.GetTablePrefix + "tablelist]").Tables[0].Rows;
+            string sql = string.Format("SELECT id FROM `{0}tablelist`", BaseConfigs.GetTablePrefix);
+            return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0].Rows;
         }
 
         public int UpdateMinMaxField(string posttablename, int posttableid)
         {
-            return DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "tablelist] SET [mintid]=" + GetMinPostTableTid(posttablename) + ",[maxtid]=" + GetMaxPostTableTid(posttablename) + "  WHERE [id]=" + posttableid);
+            string sql = string.Format("UPDATE `{0}tablelist` SET `mintid`={1},`maxtid`={2} WHERE `id`={3}", BaseConfigs.GetTablePrefix, GetMinPostTableTid(posttablename), GetMaxPostTableTid(posttablename), posttableid);
+            return DbHelper.ExecuteNonQuery(CommandType.Text, sql);
         }
 
         public DataRowCollection GetForumIdList()
         {
-            return DbHelper.ExecuteDataset(CommandType.Text, "SELECT [fid] FROM [" + BaseConfigs.GetTablePrefix + "forums]").Tables[0].Rows;
+            string sql = string.Format("SELECT `fid` FROM `{0}forums`", BaseConfigs.GetTablePrefix);
+            return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0].Rows;
         }
 
         public int CreateFullTextIndex(string dbname)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.Append("USE " + dbname + ";");
-            sb.Append("execute sp_fulltext_database 'enable';");
-            return DbHelper.ExecuteNonQuery(CommandType.Text, sb.ToString());
+            //StringBuilder sb = new StringBuilder();
+            //sb.Append("USE " + dbname + ";");
+            //sb.Append("execute sp_fulltext_database 'enable';");
+            throw new Exception("SQLite数据库不支持全文索引!");//return DbHelper.ExecuteNonQuery(CommandType.Text, sb.ToString());
         }
 
         public int GetMaxForumId()
         {
-            return Utils.StrToInt(DbHelper.ExecuteScalar(CommandType.Text, "SELECT ISNULL(MAX(fid), 0) FROM " + BaseConfigs.GetTablePrefix + "forums"), 0);
+            string sql = string.Format("SELECT MAX(`fid`) FROM `{0}forums`", BaseConfigs.GetTablePrefix);
+            return Utils.StrToInt(DbHelper.ExecuteScalar(CommandType.Text, sql), 0);
         }
 
         public DataTable GetForumList()
         {
-            return DbHelper.ExecuteDataset(CommandType.Text, "SELECT [fid],[name] FROM [" + BaseConfigs.GetTablePrefix + "forums]").Tables[0];
+            string sql = string.Format("SELECT `fid`,`name` FROM `{0}forums`", BaseConfigs.GetTablePrefix);
+            return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0];
         }
 
         public DataTable GetShortForumList()
         {
-            string sql = "SELECT [fid],[name],[parentid] FROM [" + BaseConfigs.GetTablePrefix + "forums] ORDER BY [displayorder] ASC";
+            string sql = string.Format("SELECT `fid`,`name`,`parentid` FROM `{0}forums` ORDER BY `displayorder` ASC", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0];
         }
 
         public DataTable GetAllForumList()
         {
             //string sql = "SELECT * FROM [" + BaseConfigs.GetTablePrefix + "forums] ORDER BY [displayorder] ASC";
-            string sql = string.Format("SELECT [{0}forums].*, [{0}forumfields].* FROM [{0}forums] LEFT JOIN [{0}forumfields] ON [{0}forums].[fid]=[{0}forumfields].[fid]", BaseConfigs.GetTablePrefix);
+            string sql = string.Format("SELECT `{0}forums`.*, `{0}forumfields`.* FROM `{0}forums` LEFT JOIN `{0}forumfields` ON `{0}forums`.`fid`=`{0}forumfields`.`fid`", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0];
         }
 
@@ -355,7 +370,7 @@ namespace Discuz.Data.Sqlite
 			{
 				DbHelper.MakeInParam("@fid",DbType.Int32, 4, fid)
 			};
-            string sql = string.Format("SELECT [{0}forums].*, [{0}forumfields].* FROM [{0}forums] LEFT JOIN [{0}forumfields] ON [{0}forums].[fid]=[{0}forumfields].[fid] WHERE [{0}forums].[fid]=@fid", BaseConfigs.GetTablePrefix);
+            string sql = string.Format("SELECT `{0}forums`.*, `{0}forumfields`.* FROM `{0}forums` LEFT JOIN `{0}forumfields` ON `{0}forums`.`fid`=`{0}forumfields`.`fid` WHERE `{0}forums`.`fid`=@fid", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteDataset(CommandType.Text, sql, parms).Tables[0];
         }
 
@@ -365,34 +380,31 @@ namespace Discuz.Data.Sqlite
             string sql = "";
             if (username != "")
             {
-                sql = string.Format("SELECT * FROM [{0}forums] f1 JOIN [{0}forumfields] f2 ON [f1].[fid]=[f2].[fid] WHERE [f2].[permuserlist] NOT LIKE '' AND [f2].[permuserlist] LIKE '%{1}%'", BaseConfigs.GetTablePrefix,username);
+                sql = string.Format("SELECT * FROM `{0}forums` f1 JOIN `{0}forumfields` f2 ON `f1`.`fid`=`f2`.`fid` WHERE `f2`.`permuserlist` NOT LIKE '' AND `f2`.`permuserlist` LIKE '%{1}%'", BaseConfigs.GetTablePrefix, username);
                 return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0];
             }
-            sql = string.Format("SELECT * FROM [{0}forums] f1 JOIN [{0}forumfields] f2 ON [f1].[fid]=[f2].[fid] WHERE [f2].[permuserlist] NOT LIKE ''", BaseConfigs.GetTablePrefix);
+            sql = string.Format("SELECT * FROM `{0}forums` f1 JOIN `{0}forumfields` f2 ON `f1`.`fid`=`f2`.`fid` WHERE `f2`.`permuserlist` NOT LIKE ''", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0];
         }
 
      
         public DataTable GetForumTableWithSpecialUser(int fid)
         {
-
-            //string sql = "select [" + BaseConfigs.GetTablePrefix + "forums].*, [" + BaseConfigs.GetTablePrefix + "forumfields].* from dnt_forums f1,dnt_forumfields f2 where f1.fid=f2.fid";
-            string sql = string.Format("SELECT * FROM [{0}forums] f1 JOIN [{0}forumfields] f2 ON [f1].[fid]=[f2].[fid] WHERE [f2].[permuserlist] NOT LIKE '' AND f2.fid={1}", BaseConfigs.GetTablePrefix,fid);
+            string sql = string.Format("SELECT * FROM `{0}forums` f1 JOIN `{0}forumfields` f2 ON `f1`.`fid`=`f2`.`fid` WHERE `f2`.`permuserlist` NOT LIKE '' AND f2.fid={1}", BaseConfigs.GetTablePrefix,fid);
             return DbHelper.ExecuteDataset(CommandType.Text, sql).Tables[0];
-
         }
 
         public string GetFourmSpecialUserList(int fid)
         {
-            string sql = string.Format("SELECT [permuserlist] FROM [{0}forumfields] WHERE [fid]={1}", BaseConfigs.GetTablePrefix,fid);
+            string sql = string.Format("SELECT `permuserlist` FROM `{0}forumfields` WHERE `fid`={1}", BaseConfigs.GetTablePrefix,fid);
             return DbHelper.ExecuteScalarToStr(CommandType.Text, sql);
         }
 
         public void SaveForumsInfo(ForumInfo foruminfo)
         {
-            SqlConnection conn = new SqlConnection(DbHelper.ConnectionString);
+            SQLiteConnection conn = new SQLiteConnection(DbHelper.ConnectionString);
             conn.Open();
-            using (SqlTransaction trans = conn.BeginTransaction())
+            using (SQLiteTransaction trans = conn.BeginTransaction())
             {
                 try
                 {
@@ -422,11 +434,7 @@ namespace Discuz.Data.Sqlite
                         DbHelper.MakeInParam("@allowspecialonly",DbType.Int32,4,foruminfo.Allowspecialonly),
 						DbHelper.MakeInParam("@fid", DbType.Int32, 4, foruminfo.Fid)
 					};
-                    string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [name]=@name, [status]=@status, [colcount]=@colcount, [templateid]=@templateid,"
-                        + "[allowsmilies]=@allowsmilies ,[allowrss]=@allowrss, [allowhtml]=@allowhtml, [allowbbcode]=@allowbbcode, [allowimgcode]=@allowimgcode, "
-                        + "[allowblog]=@allowblog,[istrade]=@istrade,[alloweditrules]=@alloweditrules ,[allowthumbnail]=@allowthumbnail ,[allowtag]=@allowtag,"
-                        + "[recyclebin]=@recyclebin, [modnewposts]=@modnewposts,[jammer]=@jammer,[disablewatermark]=@disablewatermark,[inheritedmod]=@inheritedmod,"
-                        + "[autoclose]=@autoclose,[displayorder]=@displayorder,[allowpostspecial]=@allowpostspecial,[allowspecialonly]=@allowspecialonly WHERE [fid]=@fid";
+                    string sql = string.Format("UPDATE `{0}forums` SET `name`=@name, `status`=@status, `colcount`=@colcount, `templateid`=@templateid,`allowsmilies`=@allowsmilies ,`allowrss`=@allowrss, `allowhtml`=@allowhtml, `allowbbcode`=@allowbbcode, `allowimgcode`=@allowimgcode,`allowblog`=@allowblog,`istrade`=@istrade,`alloweditrules`=@alloweditrules ,`allowthumbnail`=@allowthumbnail ,`allowtag`=@allowtag,`recyclebin`=@recyclebin, `modnewposts`=@modnewposts,`jammer`=@jammer,`disablewatermark`=@disablewatermark,`inheritedmod`=@inheritedmod,`autoclose`=@autoclose,`displayorder`=@displayorder,`allowpostspecial`=@allowpostspecial,`allowspecialonly`=@allowspecialonly WHERE `fid`=@fid", BaseConfigs.GetTablePrefix);
                     DbHelper.ExecuteNonQuery(trans, CommandType.Text, sql, parms);
 
                     DbParameter[] prams1 = {
@@ -452,12 +460,7 @@ namespace Discuz.Data.Sqlite
                         DbHelper.MakeInParam("@rewritename", DbType.String, 20, foruminfo.Rewritename),
 						DbHelper.MakeInParam("@fid", DbType.Int32, 4, foruminfo.Fid)
 					};
-                    sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "forumfields] SET [description]=@description,[password]=@password,[icon]=@icon,[redirect]=@redirect,"
-                         + "[attachextensions]=@attachextensions,[rules]=@rules,[topictypes]=@topictypes,[viewperm]=@viewperm,[postperm]=@postperm,[replyperm]=@replyperm,"
-                         + "[getattachperm]=@getattachperm,[postattachperm]=@postattachperm,[applytopictype]=@applytopictype,[postbytopictype]=@postbytopictype,"
-                         + "[viewbytopictype]=@viewbytopictype,[topictypeprefix]=@topictypeprefix,[permuserlist]=@permuserlist,[seokeywords]=@seokeywords,"
-                         + "[seodescription]=@seodescription,[rewritename]=@rewritename WHERE [fid]=@fid";
-					
+                    sql = string.Format("UPDATE `{0}forumfields` SET `description`=@description,`password`=@password,`icon`=@icon,`redirect`=@redirect,`attachextensions`=@attachextensions,`rules`=@rules,`topictypes`=@topictypes,`viewperm`=@viewperm,`postperm`=@postperm,`replyperm`=@replyperm,`getattachperm`=@getattachperm,`postattachperm`=@postattachperm,`applytopictype`=@applytopictype,`postbytopictype`=@postbytopictype,`viewbytopictype`=@viewbytopictype,`topictypeprefix`=@topictypeprefix,`permuserlist`=@permuserlist,`seokeywords`=@seokeywords,`seodescription`=@seodescription,`rewritename`=@rewritename WHERE `fid`=@fid", BaseConfigs.GetTablePrefix);					
                     DbHelper.ExecuteNonQuery(trans, CommandType.Text, sql, prams1);
 
                     trans.Commit();
@@ -503,12 +506,7 @@ namespace Discuz.Data.Sqlite
                 DbHelper.MakeInParam("@allowpostspecial",DbType.Int32,4,foruminfo.Allowpostspecial),
                 DbHelper.MakeInParam("@allowspecialonly",DbType.Int32,4,foruminfo.Allowspecialonly),
 			};
-            string sql = "INSERT INTO [" + BaseConfigs.GetTablePrefix + "forums] ([parentid],[layer],[pathlist],[parentidlist],[subforumcount],[name],"
-                + "[status],[colcount],[displayorder],[templateid],[allowsmilies],[allowrss],[allowhtml],[allowbbcode],[allowimgcode],[allowblog],"
-                + "[istrade],[alloweditrules],[recyclebin],[modnewposts],[jammer],[disablewatermark],[inheritedmod],[autoclose],[allowthumbnail],"
-                + "[allowtag],[allowpostspecial],[allowspecialonly]) VALUES (@parentid,@layer,@pathlist,@parentidlist,@subforumcount,@name,@status, @colcount, @displayorder,"
-                + "@templateid,@allowsmilies,@allowrss,@allowhtml,@allowbbcode,@allowimgcode,@allowblog,@istrade,@alloweditrules,@recyclebin,"
-                + "@modnewposts,@jammer,@disablewatermark,@inheritedmod,@autoclose,@allowthumbnail,@allowtag,@allowpostspecial,@allowspecialonly)";
+            string sql = string.Format("INSERT INTO `{0}forums` (`parentid`,`layer`,`pathlist`,`parentidlist`,`subforumcount`,`name`,`status`,`colcount`,`displayorder`,`templateid`,`allowsmilies`,`allowrss`,`allowhtml`,`allowbbcode`,`allowimgcode`,`allowblog`,`istrade`,`alloweditrules`,`recyclebin`,`modnewposts`,`jammer`,`disablewatermark`,`inheritedmod`,`autoclose`,`allowthumbnail`,`allowtag`,`allowpostspecial`,`allowspecialonly`) VALUES (@parentid,@layer,@pathlist,@parentidlist,@subforumcount,@name,@status, @colcount, @displayorder,@templateid,@allowsmilies,@allowrss,@allowhtml,@allowbbcode,@allowimgcode,@allowblog,@istrade,@alloweditrules,@recyclebin,@modnewposts,@jammer,@disablewatermark,@inheritedmod,@autoclose,@allowthumbnail,@allowtag,@allowpostspecial,@allowspecialonly)", BaseConfigs.GetTablePrefix);
             DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
 
             int fid = GetMaxForumId();
@@ -534,10 +532,7 @@ namespace Discuz.Data.Sqlite
                 DbHelper.MakeInParam("@seodescription", DbType.String, 500, foruminfo.Seodescription),
                 DbHelper.MakeInParam("@rewritename", DbType.String, 20, foruminfo.Rewritename)
 			};
-            sql = "INSERT INTO [" + BaseConfigs.GetTablePrefix + "forumfields] ([fid],[description],[password],[icon],[postcredits],[replycredits],[redirect],"
-                  + "[attachextensions],[moderators],[rules],[topictypes],[viewperm],[postperm],[replyperm],[getattachperm],[postattachperm],[seokeywords],[seodescription],[rewritename]) "
-                  + "VALUES (@fid,@description,@password,@icon,@postcredits,@replycredits,@redirect,@attachextensions,@moderators,@rules,@topictypes,@viewperm,"
-                  + "@postperm,@replyperm,@getattachperm,@postattachperm,@seokeywords,@seodescription,@rewritename)";
+            sql = string.Format("INSERT INTO `{0}forumfields` (`fid`,`description`,`password`,`icon`,`postcredits`,`replycredits`,`redirect`,`attachextensions`,`moderators`,`rules`,`topictypes`,`viewperm`,`postperm`,`replyperm`,`getattachperm`,`postattachperm`,`seokeywords`,`seodescription`,`rewritename`) VALUES (@fid,@description,@password,@icon,@postcredits,@replycredits,@redirect,@attachextensions,@moderators,@rules,@topictypes,@viewperm,@postperm,@replyperm,@getattachperm,@postattachperm,@seokeywords,@seodescription,@rewritename)", BaseConfigs.GetTablePrefix);
             DbHelper.ExecuteDataset(CommandType.Text, sql, prams1);
             return fid;
         }
@@ -549,7 +544,7 @@ namespace Discuz.Data.Sqlite
 			    DbHelper.MakeInParam("@pathlist", DbType.AnsiString, 3000, pathlist),
                 DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid)
 		    };
-            string sql = "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET pathlist=@pathlist  WHERE [fid]=@fid";
+            string sql = "UPDATE `{0}forums` SET pathlist=@pathlist WHERE `fid`=@fid";
             DbHelper.ExecuteNonQuery(CommandType.Text, sql, parms);
         }
 
@@ -561,8 +556,8 @@ namespace Discuz.Data.Sqlite
                 DbHelper.MakeInParam("@parentidlist", DbType.AnsiString, 300, parentidlist),
                 DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid)
 		    };
-            DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [layer]=@layer WHERE [fid]=@fid", parms);
-            DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [parentidlist]=@parentidlist WHERE [fid]=@fid", parms);
+            DbHelper.ExecuteNonQuery(CommandType.Text, string.Format("UPDATE `{0}forums` SET `layer`=@layer WHERE `fid`=@fid", BaseConfigs.GetTablePrefix), parms);
+            DbHelper.ExecuteNonQuery(CommandType.Text, string.Format("UPDATE `{0}forums` SET `parentidlist`=@parentidlist WHERE `fid`=@fid", BaseConfigs.GetTablePrefix), parms);
         }
 
         public int GetForumsParentidByFid(int fid)
@@ -571,27 +566,27 @@ namespace Discuz.Data.Sqlite
             {
                 DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid)
 		    };
-            string sql = "SELECT TOP 1 [parentid] FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE fid=@fid";
+            string sql = string.Format("SELECT `parentid` FROM `{0}forums` WHERE fid=@fid LIMIT 0,1", BaseConfigs.GetTablePrefix);
             return Convert.ToInt32(DbHelper.ExecuteScalar(CommandType.Text, sql, parms));
         }
 
         public void MovingForumsPos(string currentfid, string targetfid, bool isaschildnode, string extname)
         {
-            SqlConnection conn = new SqlConnection(DbHelper.ConnectionString);
+            SQLiteConnection conn = new SQLiteConnection(DbHelper.ConnectionString);
             conn.Open();
 
-            using (SqlTransaction trans = conn.BeginTransaction())
+            using (SQLiteTransaction trans = conn.BeginTransaction())
             {
                 try
                 {
                     //取得当前论坛版块的信息
-                    DataRow dr = DbHelper.ExecuteDataset(trans, CommandType.Text, "SELECT TOP 1 *  FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE [fid]=" + currentfid).Tables[0].Rows[0];
+                    DataRow dr = DbHelper.ExecuteDataset(trans, CommandType.Text, string.Format("SELECT * FROM `{0}forums` WHERE `fid`={1} LIMIT 0,1", BaseConfigs.GetTablePrefix, currentfid)).Tables[0].Rows[0];
 
                     //取得目标论坛版块的信息
-                    DataRow targetdr = DbHelper.ExecuteDataset(trans, CommandType.Text, "SELECT TOP 1 *  FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE [fid]=" + targetfid).Tables[0].Rows[0];
+                    DataRow targetdr = DbHelper.ExecuteDataset(trans, CommandType.Text, string.Format("SELECT * FROM `{0}forums` WHERE `fid`={1} LIMIT 0,1", BaseConfigs.GetTablePrefix, targetfid)).Tables[0].Rows[0];
 
                     //当前论坛版块带子版块时
-                    if (DbHelper.ExecuteDataset(CommandType.Text, "SELECT TOP 1 FID FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE [parentid]=" + currentfid).Tables[0].Rows.Count > 0)
+                    if (DbHelper.ExecuteDataset(CommandType.Text, string.Format("SELECT `fid` FROM `{0}forums` WHERE `parentid`={1} LIMIT 0,1", BaseConfigs.GetTablePrefix, currentfid)).Tables[0].Rows.Count > 0)
                     {
                         #region
 
@@ -599,24 +594,21 @@ namespace Discuz.Data.Sqlite
                         if (isaschildnode) //作为论坛子版块插入
                         {
                             //让位于当前论坛版块(分类)显示顺序之后的论坛版块全部加1(为新加入的论坛版块让位结果)
-                            sqlstring = string.Format("UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [displayorder]=[displayorder]+1 WHERE [displayorder]>={0}",
-                                                      Convert.ToString(Convert.ToInt32(targetdr["displayorder"].ToString()) + 1));
+                            sqlstring = string.Format("UPDATE `{0}forums` SET `displayorder`=`displayorder`+1 WHERE `displayorder`>={1}", BaseConfigs.GetTablePrefix, Convert.ToString(Convert.ToInt32(targetdr["displayorder"].ToString()) + 1));
                             DbHelper.ExecuteDataset(trans, CommandType.Text, sqlstring);
 
                             //更新当前论坛版块的相关信息
-                            sqlstring = string.Format("UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [parentid]='{1}',[displayorder]='{2}' WHERE [fid]={0}", currentfid, targetdr["fid"].ToString(), Convert.ToString(Convert.ToInt32(targetdr["displayorder"].ToString().Trim()) + 1));
+                            sqlstring = string.Format("UPDATE [{0}forums] SET [parentid]='{1}',[displayorder]='{2}' WHERE [fid]={3}", BaseConfigs.GetTablePrefix, targetdr["fid"].ToString(), Convert.ToString(Convert.ToInt32(targetdr["displayorder"].ToString().Trim()) + 1), currentfid);
                             DbHelper.ExecuteDataset(trans, CommandType.Text, sqlstring);
                         }
                         else //作为同级论坛版块,在目标论坛版块之前插入
                         {
                             //让位于包括当前论坛版块显示顺序之后的论坛版块全部加1(为新加入的论坛版块让位结果)
-                            sqlstring = string.Format("UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [displayorder]=[displayorder]+1 WHERE [displayorder]>={0} OR [fid]={1}",
-                                                      Convert.ToString(Convert.ToInt32(targetdr["displayorder"].ToString())),
-                                                      targetdr["fid"].ToString());
+                            sqlstring = string.Format("UPDATE `{0}forums` SET `displayorder`=`displayorder`+1 WHERE `displayorder`>={1} OR `fid`={2}", BaseConfigs.GetTablePrefix, Convert.ToString(Convert.ToInt32(targetdr["displayorder"].ToString())), targetdr["fid"].ToString());
                             DbHelper.ExecuteDataset(trans, CommandType.Text, sqlstring);
 
                             //更新当前论坛版块的相关信息
-                            sqlstring = string.Format("UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [parentid]='{1}',[displayorder]='{2}'  WHERE [fid]={0}", currentfid, targetdr["parentid"].ToString(), Convert.ToString(Convert.ToInt32(targetdr["displayorder"].ToString().Trim())));
+                            sqlstring = string.Format("UPDATE `{0}forums` SET `parentid`='{1}',`displayorder`='{2}' WHERE `fid`={3}", BaseConfigs.GetTablePrefix, targetdr["parentid"].ToString(), Convert.ToString(Convert.ToInt32(targetdr["displayorder"].ToString().Trim())), currentfid);
                             DbHelper.ExecuteDataset(trans, CommandType.Text, sqlstring);
                         }
 
@@ -625,11 +617,11 @@ namespace Discuz.Data.Sqlite
                         {
                             if (dr["parentidlist"].ToString().Trim() != "")
                             {
-                                DbHelper.ExecuteNonQuery(trans, CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [topics]=[topics]-" + dr["topics"].ToString() + ",[posts]=[posts]-" + dr["posts"].ToString() + "  WHERE [fid] IN(" + dr["parentidlist"].ToString().Trim() + ")");
+                                DbHelper.ExecuteNonQuery(trans, CommandType.Text, string.Format("UPDATE `{0}forums` SET `topics`=`topics`-{1},`posts`=`posts`-{2} WHERE `fid` IN({3})", BaseConfigs.GetTablePrefix, dr["topics"].ToString(), dr["posts"].ToString(), dr["parentidlist"].ToString().Trim()));
                             }
                             if (targetdr["parentidlist"].ToString().Trim() != "")
                             {
-                                DbHelper.ExecuteNonQuery(trans, CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [topics]=[topics]+" + dr["topics"].ToString() + ",[posts]=[posts]+" + dr["posts"].ToString() + "  WHERE [fid] IN(" + targetdr["parentidlist"].ToString().Trim() + ")");
+                                DbHelper.ExecuteNonQuery(trans, CommandType.Text, string.Format("UPDATE `{0}forums` SET `topics`=`topics`+{1},`posts`=`posts`+{2} WHERE `fid` IN({3})", BaseConfigs.GetTablePrefix, dr["topics"].ToString(), dr["posts"].ToString(), targetdr["parentidlist"].ToString().Trim()));
                             }
                         }
 
@@ -640,7 +632,7 @@ namespace Discuz.Data.Sqlite
                         #region
 
                         //设置旧的父一级的子论坛数
-                        DbHelper.ExecuteDataset(trans, CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [subforumcount]=[subforumcount]-1 WHERE [fid]=" + dr["parentid"].ToString());
+                        DbHelper.ExecuteDataset(trans, CommandType.Text, string.Format("UPDATE `{0}forums` SET `subforumcount`=`subforumcount`-1 WHERE `fid`={1}", BaseConfigs.GetTablePrefix, dr["parentid"].ToString()));
 
                         //让位于当前节点显示顺序之后的节点全部减1 [起到删除节点的效果]
                         if (isaschildnode) //作为子论坛版块插入
@@ -648,20 +640,19 @@ namespace Discuz.Data.Sqlite
                             //更新相应的被影响的版块数和帖子数
                             if ((dr["topics"].ToString() != "0") && (Convert.ToInt32(dr["topics"].ToString()) > 0) && (dr["posts"].ToString() != "0") && (Convert.ToInt32(dr["posts"].ToString()) > 0))
                             {
-                                DbHelper.ExecuteNonQuery(trans, CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [topics]=[topics]-" + dr["topics"].ToString() + ",[posts]=[posts]-" + dr["posts"].ToString() + " WHERE [fid] IN(" + dr["parentidlist"].ToString() + ")");
+                                DbHelper.ExecuteNonQuery(trans, CommandType.Text, string.Format("UPDATE `{0}forums` SET `topics`=`topics`-{1},`posts`=`posts`-{2} WHERE `fid` IN({3})", BaseConfigs.GetTablePrefix, dr["topics"].ToString(), dr["posts"].ToString(), dr["parentidlist"].ToString()));
                                 if (targetdr["parentidlist"].ToString().Trim() != "")
                                 {
-                                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [topics]=[topics]+" + dr["topics"].ToString() + ",[posts]=[posts]+" + dr["posts"].ToString() + " WHERE [fid] IN(" + targetdr["parentidlist"].ToString() + "," + targetfid + ")");
+                                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, string.Format("UPDATE `{0}forums` SET `topics`=`topics`+{1},`posts`=`posts`+{2} WHERE `fid` IN({3},{4})", BaseConfigs.GetTablePrefix, dr["topics"].ToString(), dr["posts"].ToString(), targetdr["parentidlist"].ToString(), targetfid));
                                 }
                             }
 
                             //让位于当前论坛版块显示顺序之后的论坛版块全部加1(为新加入的论坛版块让位结果)
-                            string sqlstring = string.Format("UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [displayorder]=[displayorder]+1 WHERE [displayorder]>={0}",
-                                                             Convert.ToString(Convert.ToInt32(targetdr["displayorder"].ToString()) + 1));
+                            string sqlstring = string.Format("UPDATE `{0}forums` SET `displayorder`=`displayorder`+1 WHERE `displayorder`>={1}", BaseConfigs.GetTablePrefix, Convert.ToString(Convert.ToInt32(targetdr["displayorder"].ToString()) + 1));
                             DbHelper.ExecuteDataset(trans, CommandType.Text, sqlstring);
 
                             //设置新的父一级的子论坛数
-                            DbHelper.ExecuteDataset(trans, CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [subforumcount]=[subforumcount]+1 WHERE [fid]=" + targetfid);
+                            DbHelper.ExecuteDataset(trans, CommandType.Text, string.Format("UPDATE `{0}forums` SET `subforumcount`=`subforumcount`+1 WHERE `fid`={1}", BaseConfigs.GetTablePrefix, targetfid));
 
                             string parentidlist = null;
                             if (targetdr["parentidlist"].ToString().Trim() == "0")
@@ -674,13 +665,14 @@ namespace Discuz.Data.Sqlite
                             }
 
                             //更新当前论坛版块的相关信息
-                            sqlstring = string.Format("UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [parentid]='{1}',[layer]='{2}',[pathlist]='{3}', [parentidlist]='{4}',[displayorder]='{5}' WHERE [fid]={0}",
-                                                      currentfid,
-                                                      targetdr["fid"].ToString(),
-                                                      Convert.ToString(Convert.ToInt32(targetdr["layer"].ToString()) + 1),
-                                                      targetdr["pathlist"].ToString().Trim() + "<a href=\"showforum-" + currentfid + extname + "\">" + dr["name"].ToString().Trim().Replace("'","''") + "</a>",
-                                                      parentidlist,
-                                                      Convert.ToString(Convert.ToInt32(targetdr["displayorder"].ToString().Trim()) + 1)
+                            sqlstring = string.Format("UPDATE `{0}forums` SET `parentid`='{1}',`layer`='{2}',`pathlist`='{3}', `parentidlist`='{4}',`displayorder`='{5}' WHERE `fid`={6}",
+                                BaseConfigs.GetTablePrefix,
+                                targetdr["fid"].ToString(),
+                                Convert.ToString(Convert.ToInt32(targetdr["layer"].ToString()) + 1),
+                                targetdr["pathlist"].ToString().Trim() + "<a href=\"showforum-" + currentfid + extname + "\">" + dr["name"].ToString().Trim().Replace("'", "''") + "</a>",
+                                parentidlist,
+                                Convert.ToString(Convert.ToInt32(targetdr["displayorder"].ToString().Trim()) + 1),
+                                currentfid
                                 );
                             DbHelper.ExecuteDataset(trans, CommandType.Text, sqlstring);
 
@@ -703,10 +695,10 @@ namespace Discuz.Data.Sqlite
                             //设置新的父一级的子论坛数
                             DbHelper.ExecuteDataset(trans, CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forums]  SET [subforumcount]=[subforumcount]+1 WHERE [fid]=" + targetdr["parentid"].ToString());
                             string parentpathlist = "";
-                            DataTable dt = DbHelper.ExecuteDataset(trans, CommandType.Text, "SELECT TOP 1 [pathlist] FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE [fid]=" + targetdr["parentid"].ToString()).Tables[0];
+                            DataTable dt = DbHelper.ExecuteDataset(trans, CommandType.Text, "SELECT [pathlist] FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE [fid]=" + targetdr["parentid"].ToString() + " LIMIT 0,1").Tables[0];
                             if (dt.Rows.Count > 0)
                             {
-                                parentpathlist = DbHelper.ExecuteDataset(trans, CommandType.Text, "SELECT TOP 1 [pathlist] FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE [fid]=" + targetdr["parentid"].ToString()).Tables[0].Rows[0][0].ToString().Trim();
+                                parentpathlist = DbHelper.ExecuteDataset(trans, CommandType.Text, "SELECT [pathlist] FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE [fid]=" + targetdr["parentid"].ToString() + " LIMIT 0,1").Tables[0].Rows[0][0].ToString().Trim();
                             }
 
                             //更新当前论坛版块的相关信息
@@ -741,7 +733,7 @@ namespace Discuz.Data.Sqlite
             {
                 DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid)
 		    };
-            string sql = "SELECT TOP 1 * FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE [parentid]=@fid";
+            string sql = string.Format("SELECT * FROM `{0}forums` WHERE `parentid`=@fid LIMIT 0,1", BaseConfigs.GetTablePrefix);
             if (DbHelper.ExecuteDataset(CommandType.Text, sql, parms).Tables[0].Rows.Count > 0)
                 return true;
             else
@@ -750,42 +742,42 @@ namespace Discuz.Data.Sqlite
 
         public void DeleteForumsByFid(string postname, string fid)
         {
-            SqlConnection conn = new SqlConnection(DbHelper.ConnectionString);
+            SQLiteConnection conn = new SQLiteConnection(DbHelper.ConnectionString);
             conn.Open();
-            using (SqlTransaction trans = conn.BeginTransaction())
+            using (SQLiteTransaction trans = conn.BeginTransaction())
             {
                 try
                 {
                     //先取出当前节点的信息
-                    DataRow dr = DbHelper.ExecuteDataset(trans, CommandType.Text, "SELECT TOP 1 * FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE [fid]=" + fid).Tables[0].Rows[0];
+                    DataRow dr = DbHelper.ExecuteDataset(trans, CommandType.Text, string.Format("SELECT * FROM `{0}forums` WHERE `fid`={1} LIMIT 0,1", BaseConfigs.GetTablePrefix, fid)).Tables[0].Rows[0];
 
                     //调整在当前节点排序位置之后的节点,做减1操作
-                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [displayorder]=[displayorder]-1 WHERE [displayorder]>" + dr["displayorder"].ToString());
+                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, string.Format("UPDATE `{0}forums` SET `displayorder`=`displayorder`-1 WHERE `displayorder`>{1}", BaseConfigs.GetTablePrefix, dr["displayorder"].ToString()));
 
                     //修改父结点中的子论坛个数
-                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forums] SET [subforumcount]=[subforumcount]-1 WHERE  [fid]=" + dr["parentid"].ToString());
+                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, string.Format("UPDATE `{0}forums` SET `subforumcount`=`subforumcount`-1 WHERE  `fid`={1}", BaseConfigs.GetTablePrefix, dr["parentid"].ToString()));
 
                     //删除当前节点的高级属性部分
-                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, "DELETE FROM [" + BaseConfigs.GetTablePrefix + "forumfields] WHERE [fid]=" + fid);
+                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, string.Format("DELETE FROM `{0}forumfields` WHERE `fid`={1}", BaseConfigs.GetTablePrefix, fid));
 
                     //删除相关投票的信息
-                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, "DELETE FROM [" + BaseConfigs.GetTablePrefix + "polls] WHERE [tid] IN(SELECT [tid] FROM [" + BaseConfigs.GetTablePrefix + "topics] WHERE [fid]=" + fid + ")");
+                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, string.Format("DELETE FROM `{0}polls` WHERE `tid` IN(SELECT `tid` FROM `{0}topics` WHERE `fid`={1})", BaseConfigs.GetTablePrefix, fid));
 
                     //删除帖子附件表中的信息
-                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, "DELETE FROM [" + BaseConfigs.GetTablePrefix + "attachments] WHERE [tid] IN(SELECT [tid] FROM [" + BaseConfigs.GetTablePrefix + "topics] WHERE [fid]=" + fid + ") OR [pid] IN(SELECT [pid] FROM [" + postname + "] WHERE [fid]=" + fid + ")");
+                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, string.Format("DELETE FROM `{0}attachments` WHERE `tid` IN(SELECT `tid` FROM `{0}topics` WHERE `fid`={1}) OR `pid` IN(SELECT `pid` FROM `{2}` WHERE `fid`={1})", BaseConfigs.GetTablePrefix, fid, postname));
 
                     //删除相关帖子
-                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, "DELETE FROM [" + postname + "] WHERE [fid]=" + fid);
+                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, string.Format("DELETE FROM `{0}` WHERE `fid`={1}", postname, fid));
 
                     //删除相关主题
-                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, "DELETE FROM [" + BaseConfigs.GetTablePrefix + "topics] WHERE [fid]=" + fid);
+                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, string.Format("DELETE FROM `{0}topics` WHERE `fid`={1}", BaseConfigs.GetTablePrefix, fid));
 
 
                     //删除当前节点
-                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, "DELETE FROM [" + BaseConfigs.GetTablePrefix + "forums] WHERE  [fid]=" + fid);
+                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, string.Format("DELETE FROM `{0}forums` WHERE  `fid`={1}", BaseConfigs.GetTablePrefix, fid));
 
                     //删除版主列表中的相关信息
-                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, "DELETE FROM [" + BaseConfigs.GetTablePrefix + "moderators] WHERE  [fid]=" + fid);
+                    DbHelper.ExecuteNonQuery(trans, CommandType.Text, string.Format("DELETE FROM `{0}moderators` WHERE  `fid`={1}", BaseConfigs.GetTablePrefix, fid));
 
                     trans.Commit();
                 }
@@ -804,15 +796,15 @@ namespace Discuz.Data.Sqlite
             {
                 DbHelper.MakeInParam("@fid", DbType.Int32, 4, fid)
 		    };
-            string sql = "SELECT [parentid] From [" + BaseConfigs.GetTablePrefix + "forums] WHERE [inheritedmod]=1 AND [fid]=@fid";
+            string sql = string.Format("SELECT `parentid` From `{0}forums` WHERE `inheritedmod`=1 AND `fid`=@fid", BaseConfigs.GetTablePrefix);
             return DbHelper.ExecuteDataset(CommandType.Text, sql, parms).Tables[0];
         }
 
         public void InsertForumsModerators(string fid, string moderators, int displayorder, int inherited)
         {
-            SqlConnection conn = new SqlConnection(DbHelper.ConnectionString);
+            SQLiteConnection conn = new SQLiteConnection(DbHelper.ConnectionString);
             conn.Open();
-            using (SqlTransaction trans = conn.BeginTransaction())
+            using (SQLiteTransaction trans = conn.BeginTransaction())
             {
                 try
                 {
@@ -831,10 +823,10 @@ namespace Discuz.Data.Sqlite
 									DbHelper.MakeInParam("@username", DbType.AnsiString, 20, username.Trim())
 								};
                             //先取出当前节点的信息
-                            DataTable dt = DbHelper.ExecuteDataset(trans, CommandType.Text, "SELECT TOP 1 [uid] FROM [" + BaseConfigs.GetTablePrefix + "users] WHERE [groupid]<>7 AND [groupid]<>8 AND [username]=@username", parms).Tables[0];
+                            DataTable dt = DbHelper.ExecuteDataset(trans, CommandType.Text, string.Format("SELECT `uid` FROM `{0}users` WHERE `groupid`<>7 AND `groupid`<>8 AND `username`=@username LIMIT 0,1", BaseConfigs.GetTablePrefix), parms).Tables[0];
                             if (dt.Rows.Count > 0)
                             {
-                                DbHelper.ExecuteNonQuery(trans, CommandType.Text, "INSERT INTO [" + BaseConfigs.GetTablePrefix + "moderators] ([uid],[fid],[displayorder],[inherited]) VALUES(" + dt.Rows[0][0].ToString() + "," + fid + "," + count.ToString() + "," + inherited.ToString() + ")");
+                                DbHelper.ExecuteNonQuery(trans, CommandType.Text, string.Format("INSERT INTO `{0}moderators` (`uid`,`fid`,`displayorder`,`inherited`) VALUES({1},{2},{3},{4})", BaseConfigs.GetTablePrefix, dt.Rows[0][0].ToString(), fid, count.ToString(), inherited.ToString()));
                                 usernamelist = usernamelist + username.Trim() + ",";
                                 count++;
                             }
@@ -848,11 +840,11 @@ namespace Discuz.Data.Sqlite
 								DbHelper.MakeInParam("@moderators", DbType.AnsiString, 255, usernamelist.Substring(0, usernamelist.Length - 1))
 
 							};
-                        DbHelper.ExecuteNonQuery(trans, CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forumfields] SET [moderators]=@moderators WHERE [fid] =" + fid, prams1);
+                        DbHelper.ExecuteNonQuery(trans, CommandType.Text, string.Format("UPDATE `{0}forumfields` SET `moderators`=@moderators WHERE `fid`={1}", BaseConfigs.GetTablePrefix, fid), prams1);
                     }
                     else
                     {
-                        DbHelper.ExecuteNonQuery(trans, CommandType.Text, "UPDATE [" + BaseConfigs.GetTablePrefix + "forumfields] SET [moderators]='' WHERE [fid] =" + fid);
+                        DbHelper.ExecuteNonQuery(trans, CommandType.Text, string.Format("UPDATE `{0}forumfields` SET `moderators`='' WHERE `fid`={1}", BaseConfigs.GetTablePrefix, fid));
                     }
 
                     trans.Commit();
@@ -878,9 +870,9 @@ namespace Discuz.Data.Sqlite
 
         public void CombinationForums(string sourcefid, string targetfid, string fidlist)
         {
-            SqlConnection conn = new SqlConnection(DbHelper.ConnectionString);
+            SQLiteConnection conn = new SQLiteConnection(DbHelper.ConnectionString);
             conn.Open();
-            using (SqlTransaction trans = conn.BeginTransaction())
+            using (SQLiteTransaction trans = conn.BeginTransaction())
             {
                 try
                 {
@@ -1077,9 +1069,9 @@ namespace Discuz.Data.Sqlite
             forumfields.Append("WHERE [fid] IN(" + fidlist + ")");
 
 
-            SqlConnection conn = new SqlConnection(DbHelper.ConnectionString);
+            SQLiteConnection conn = new SQLiteConnection(DbHelper.ConnectionString);
             conn.Open();
-            using (SqlTransaction trans = conn.BeginTransaction())
+            using (SQLiteTransaction trans = conn.BeginTransaction())
             {
                 try
                 {
