@@ -1641,7 +1641,8 @@ namespace Discuz.Data.Sqlite
         /// <returns></returns>
         public IDataReader GetForumOnlineUserList(int forumid)
         {
-            return DbHelper.ExecuteReader(CommandType.StoredProcedure, string.Format("{0}getonlineuserlistbyfid", BaseConfigs.GetTablePrefix), DbHelper.MakeInParam("@fid", DbType.Int32, 4, forumid));
+            string sql = string.Format("SELECT `olid`,`userid`,`ip`,`username`,`nickname`,`password`,`groupid`,`olimg`,`adminid`,`invisible`,`action`,`lastactivity`,`lastposttime`,`lastpostpmtime`,`lastsearchtime`,`lastupdatetime`,`forumid`,`forumname`,`titleid`,`title`,`verifycode`,`newpms`,`newnotices` FROM `dnt_online` WHERE `forumid`=@fid", BaseConfigs.GetTablePrefix);
+            return DbHelper.ExecuteReader(CommandType.Text, sql, DbHelper.MakeInParam("@fid", DbType.Int32, 4, forumid));
         }
 
         /// <summary>
@@ -2502,7 +2503,7 @@ namespace Discuz.Data.Sqlite
             DbParameter[] parms = {
 									   DbHelper.MakeInParam("@uid",DbType.Int32,4,uid),
 			};
-            return DbHelper.ExecuteReader(CommandType.Text, "SELECT TOP 1 [joindate] FROM [" + BaseConfigs.GetTablePrefix + "users] WHERE [" + BaseConfigs.GetTablePrefix + "users].[uid]=@uid", parms);
+            return DbHelper.ExecuteReader(CommandType.Text, "SELECT [joindate] FROM [" + BaseConfigs.GetTablePrefix + "users] WHERE [" + BaseConfigs.GetTablePrefix + "users].[uid]=@uid LIMIT 0,1", parms);
         }
 
         public IDataReader GetUserID(string username)

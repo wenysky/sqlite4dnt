@@ -453,7 +453,7 @@ namespace Discuz.Data.Sqlite
             DbParameter[] parms = {
 									   DbHelper.MakeInParam("@uid",DbType.Int32,4,uid)
 								   };
-            return Utils.StrToInt(DbHelper.ExecuteScalar(CommandType.Text, string.Format("SELECT SUM([filesize]) AS [todaysize] FROM [{0}attachments] WHERE [uid]=@uid AND DATEDIFF(d,[postdatetime],GETDATE())=0", BaseConfigs.GetTablePrefix), parms), 0);
+            return Utils.StrToInt(DbHelper.ExecuteScalar(CommandType.Text, string.Format("SELECT SUM([filesize]) AS [todaysize] FROM [{0}attachments] WHERE [uid]=@uid AND (julianday('now','localtime')-julianday([postdatetime],'localtime'))<0", BaseConfigs.GetTablePrefix), parms), 0);
         }
 
         /// <summary>
@@ -2642,8 +2642,25 @@ namespace Discuz.Data.Sqlite
                                         DbHelper.MakeInParam("@special", DbType.Byte, 1, topicinfo.Special),
                                         DbHelper.MakeInParam("@attention", DbType.Int32, 4, topicinfo.Attention)
 								   };
-            return Utils.StrToInt(DbHelper.ExecuteDataset(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "createtopic", parms).Tables[0].Rows[0][0].ToString(), -1);
+            string sql = string.Format("DELETE FROM `{0}topics` WHERE `tid`>(SELECT max(tid)-100 FROM `{0}topics`) AND `lastpostid`=0", BaseConfigs.GetTablePrefix);
+            DbHelper.ExecuteNonQuery(CommandType.Text, sql);
 
+            string sql2 = string.Format("INSERT INTO `{0}topics`(`fid`,`iconid`,`title`,`typeid`,`readperm`,`price`,`poster`,`posterid`,`postdatetime`,`lastpost`,`lastpostid`,`lastposter`,`views`,`replies`,`displayorder`,`highlight`,`digest`,`rate`,`hide`,`attachment`,`moderated`,`closed`,`magic`,`special`,`attention`) VALUES(@fid,@iconid,@title,@typeid,@readperm,@price,@poster,@posterid,@postdatetime,@lastpost,@lastpostid,@lastposter,@views,@replies,@displayorder,@highlight,@digest,@rate,@hide,@attachment,@moderated,@closed,@magic,@special,@attention);SELECT last_insert_rowid()", BaseConfigs.GetTablePrefix);
+            int topicid = Utils.StrToInt(DbHelper.ExecuteDataset(CommandType.Text, sql2, parms).Tables[0].Rows[0][0].ToString(), -1);
+            if (topicid > 0 && topicinfo.Displayorder == 0)
+            {
+                string sql3 = string.Format("UPDATE `{0}statistics` SET `totaltopic`=`totaltopic`+1", BaseConfigs.GetTablePrefix);
+                DbHelper.ExecuteNonQuery(CommandType.Text, sql3);
+                string sql4 = string.Format("UPDATE `{0}forums` SET `topics`=`topics`+1,`curtopics`=`curtopics`+1 WHERE `fid`=@fid", BaseConfigs.GetTablePrefix);
+                DbHelper.ExecuteNonQuery(CommandType.Text, sql4, parms);
+
+                if (topicinfo.Posterid != -1)
+                {
+                    string sql5 = string.Format("INSERT INTO `{0}mytopics`(`tid`,`uid`,`dateline`) VALUES({1},@posterid,@postdatetime)", BaseConfigs.GetTablePrefix, topicid);
+                    DbHelper.ExecuteNonQuery(CommandType.Text, sql5, parms);
+                }
+            }
+            return topicid;
         }
 
         /// <summary>
@@ -2704,14 +2721,15 @@ namespace Discuz.Data.Sqlite
 
         public IDataReader GetTopics(int fid, int pagesize, int pageindex, int startnum, string condition)
         {
+            int recordoffset = (pageindex - 1) * pagesize;
             DbParameter[] parms = {
 									   DbHelper.MakeInParam("@fid",DbType.Int32,4,fid),
 									   DbHelper.MakeInParam("@pagesize", DbType.Int32,4,pagesize),
-									   DbHelper.MakeInParam("@pageindex", DbType.Int32,4,pageindex),
-									   DbHelper.MakeInParam("@startnum", DbType.Int32,4,startnum),
-									   DbHelper.MakeInParam("@condition", DbType.AnsiString,80,condition)									   
+									   DbHelper.MakeInParam("@recordoffset", DbType.Int32,4,recordoffset),
+									   DbHelper.MakeInParam("@startnum", DbType.Int32,4,startnum)
 								   };
-            IDataReader reader = DbHelper.ExecuteReader(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "gettopiclist", parms);
+            string sql = string.Format("SELECT `rate`,`tid`,`iconid`,`typeid`,`title`,`price`,`hide`,`readperm`,`special`,`poster`,`posterid`,`replies`,`views`,`postdatetime`,`lastpost`,`lastposter`,`lastpostid`,`lastposterid`,`replies`,`highlight`,`digest`,`displayorder`,`attachment`,`closed`,`magic`,`special` FROM `{0}topics` WHERE `fid`=@fid AND `displayorder`=0 {1} ORDER BY `lastpostid` DESC LIMIT @recordoffset,@pagesize", BaseConfigs.GetTablePrefix, condition);
+            IDataReader reader = DbHelper.ExecuteReader(CommandType.Text, sql, parms);
 
             return reader;
         }
@@ -2835,7 +2853,16 @@ namespace Discuz.Data.Sqlite
 									   DbHelper.MakeInParam("@state",DbType.Int32,4,state),
 									   DbHelper.MakeInParam("@condition",DbType.AnsiString,80,condition)
 								   };
-            return Utils.StrToInt(DbHelper.ExecuteDataset(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "gettopiccountbycondition", parms).Tables[0].Rows[0][0].ToString(), -1);
+            string sql;
+            if (state == -1)
+            {
+                sql = string.Format("SELECT COUNT(tid) FROM `{0}topics` WHERE `fid`=@fid AND `displayorder`>-1 AND `closed`<=1 {1}", BaseConfigs.GetTablePrefix, condition);
+            }
+            else
+            {
+                sql = string.Format("SELECT COUNT(tid) FROM `{0}topics` WHERE `fid`=@fid AND `displayorder`>-1 AND `closed`=@state AND `closed`<=1 {1}", BaseConfigs.GetTablePrefix, condition);
+            }
+            return Utils.StrToInt(DbHelper.ExecuteDataset(CommandType.Text, sql, parms).Tables[0].Rows[0][0].ToString(), -1);
         }
 
         /// <summary>
