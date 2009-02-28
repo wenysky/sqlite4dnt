@@ -1,0 +1,41 @@
+﻿dnt_getonlineuserbyip
+dnt_getonlineuser
+dnt_createonlineuser
+dnt_getonlineuserlist
+dnt_getexpiredonlineuserlist
+dnt_deleteonlineusers
+dnt_updateuseronlinestates
+dnt_updateonlineaction
+dnt_getuserlist
+dnt_createuser
+dnt_createpm
+dnt_getuserinfo---
+dnt_getshortuserinfo
+dnt_checkpasswordbyusername
+dnt_checkpasswordbyuid
+dnt_getpmcount
+dnt_getpmlist
+dnt_checkpasswordandsecques
+private void DeleteExpiredOnlineUsers(int timeout) 需要留意,因为不知道SQLite的时间比较能否直接用<>
+public int GetMaxForumId()  原本是有ISNULL判断的,但是SQLite似乎不支持就没有了"SELECT ISNULL(MAX(`fid`), 0) FROM `{0}forums`"
+public void MovingForumsPos(string currentfid, string targetfid, bool isaschildnode, string extname) 没有完全整理格式,太多了
+
+可能存在注入漏洞:
+public int DeleteForumLink(string forumlinkidlist) 
+public DataTable GetForumField(int fid, string fieldname)
+public int UpdateForumField(int fid, string fieldname) 
+public DataTable GetForumTableBySpecialUser(string username)
+public void SetForumsPathList(string pathlist, int fid)
+public void SetForumslayer(int layer, string parentidlist, int fid)
+public void DeleteForumsByFid(string postname, string fid)
+public void InsertForumsModerators(string fid, string moderators, int displayorder, int inherited)
+public IDataReader GetTopics(int fid, int pagesize, int pageindex, int startnum, string condition)  用condition了,注入危险
+
+DATEDIFF(n, [lastpost], GETDATE())<600
+(julianday('now','localtime')-julianday([lastpost],'localtime'))<600
+
+public void SaveForumsInfo(ForumInfo foruminfo) 是一个事务提交 可以研究看看  还有后台执行sql也是事物提交的
+
+
+862----------ForumManage.cs
+  public int DeleteTopicByTidList(string topiclist, string posttableid, bool chanageposts)----------------------sql的游标看不懂,复制的mysql的历史版本,
