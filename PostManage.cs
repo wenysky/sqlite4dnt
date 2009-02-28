@@ -465,7 +465,8 @@ namespace Discuz.Data.Sqlite
             DbParameter[] parms = {
 									   DbHelper.MakeInParam("@tid", DbType.Int32, 4, tid)
 								   };
-            return DbHelper.ExecuteReader(CommandType.Text, "SELECT TOP 1 * FROM [" + BaseConfigs.GetTablePrefix + "attachments] WHERE [tid]=@tid AND LEFT([filetype], 5)='image' ORDER BY [aid]", parms);
+            string sql = string.Format("SELECT * FROM `{0}attachments` WHERE `tid`=@tid AND LEFT(`filetype`, 5)='image' ORDER BY `aid` LIMIT 0,1", BaseConfigs.GetTablePrefix);
+            return DbHelper.ExecuteReader(CommandType.Text, sql, parms);
         }
 
         public DataSet GetAttchType()
@@ -1887,13 +1888,14 @@ namespace Discuz.Data.Sqlite
         /// <returns>指定条件的帖子DataReader</returns>
         public IDataReader GetPostList(PostpramsInfo postpramsinfo, string posttablename)
         {
+            int recordoffset = (postpramsinfo.Pageindex - 1) * postpramsinfo.Pagesize;
             DbParameter[] parms = {
 										   DbHelper.MakeInParam("@tid",DbType.Int32,4,postpramsinfo.Tid),
 										   DbHelper.MakeInParam("@pagesize", DbType.Int32,4,postpramsinfo.Pagesize),
-										   DbHelper.MakeInParam("@pageindex",DbType.Int32,4,postpramsinfo.Pageindex),
-										   DbHelper.MakeInParam("@posttablename",DbType.AnsiString,20,posttablename)
+										   DbHelper.MakeInParam("@recordoffset",DbType.Int32,4,recordoffset)
 									   };
-            return DbHelper.ExecuteReader(CommandType.StoredProcedure, string.Format("{0}getpostlist", BaseConfigs.GetTablePrefix), parms);
+            string sql = string.Format("SELECT `{1}`.`pid`,`{1}`.`fid`,`{1}`.`title`,`{1}`.`layer`,`{1}`.`message`,`{1}`.`ip`,`{1}`.`lastedit`,`{1}`.`postdatetime`,`{1}`.`attachment`,`{1}`.`poster`,`{1}`.`posterid`,`{1}`.`invisible`,`{1}`.`usesig`,`{1}`.`htmlon`,`{1}`.`smileyoff`,`{1}`.`parseurloff`,`{1}`.`bbcodeoff`,`{1}`.`rate`,`{1}`.`ratetimes`,`{0}users`.`nickname`,`{0}users`.`username`,`{0}users`.`groupid`,`{0}users`.`spaceid`,`{0}users`.`gender`,`{0}users`.`bday`,`{0}users`.`email`,`{0}users`.`showemail`,`{0}users`.`digestposts`,`{0}users`.`credits`,`{0}users`.`extcredits1`,`{0}users`.`extcredits2`,`{0}users`.`extcredits3`,`{0}users`.`extcredits4`,`{0}users`.`extcredits5`,`{0}users`.`extcredits6`,`{0}users`.`extcredits7`,`{0}users`.`extcredits8`,`{0}users`.`posts`,`{0}users`.`joindate`,`{0}users`.`onlinestate`,`{0}users`.`lastactivity`,`{0}users`.`invisible`,`{0}userfields`.`avatar`,`{0}userfields`.`avatarwidth`,`{0}userfields`.`avatarheight`,`{0}userfields`.`medals`,`{0}userfields`.`sightml` AS signature,`{0}userfields`.`location`,`{0}userfields`.`customstatus`,`{0}userfields`.`website`,`{0}userfields`.`icq`,`{0}userfields`.`qq`,`{0}userfields`.`msn`,`{0}userfields`.`yahoo`,`{0}userfields`.`skype` FROM `{1}` LEFT JOIN `{0}users` ON `{0}users`.`uid`=`{1}`.`posterid` LEFT JOIN `{0}userfields` ON `{0}userfields`.`uid`=`{0}users`.`uid` WHERE `{1}`.`tid`=@tid AND `{1}`.`invisible`<=0 ORDER BY `{1}`.`pid` LIMIT @recordoffset,@pagesize", BaseConfigs.GetTablePrefix, posttablename);
+            return DbHelper.ExecuteReader(CommandType.Text, sql, parms);
         }
 
         /// <summary>
@@ -2305,13 +2307,96 @@ namespace Discuz.Data.Sqlite
         /// <returns></returns>
         public int DeleteTopicByTidList(string topiclist, string posttableid, bool chanageposts)
         {
-            DbParameter[] parms = {
-					DbHelper.MakeInParam("@tidlist", DbType.AnsiString, 2000, topiclist),
-					DbHelper.MakeInParam("@posttablename", DbType.AnsiString, 2000, BaseConfigs.GetTablePrefix + "posts" + posttableid),
-                    DbHelper.MakeInParam("@chanageposts",DbType.Boolean,1,chanageposts)
-				};
+            DbParameter[] prams = {
+                    DbHelper.MakeInParam("?tidlist", (DbType)MySqlDbType.VarChar, 200, topiclist),
+                    DbHelper.MakeInParam("?posttablename", (DbType)MySqlDbType.VarChar, 200, BaseConfigs.GetTablePrefix + "posts" + posttableid)
+                };
+            int postcount = 0;
+            int topiccount = 0;
+            int todaycount = 0;
+            string sqlstr = "";
+            string fid = "";
+            int tempFid = 0;
+            int tempPosterid = 0;
+            int tempLayer = 0;
+            DateTime temppostdatetime;
+            string tempfidlist;
 
-            return DbHelper.ExecuteNonQuery(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "deletetopicbytidlist", parms);
+            if (topiclist != "")
+            {
+                sqlstr = "SELECT `fid`,`posterid`,`layer`,`postdatetime` FROM `" + BaseConfigs.GetTablePrefix + "posts" + posttableid + "` WHERE `tid` IN (?tidlist)";
+                IDataReader ddr = DbHelper.ExecuteReader(CommandType.Text, sqlstr, prams);
+                while (ddr.Read())
+                {
+                    tempFid = Int32.Parse(ddr["fid"].ToString());
+                    tempPosterid = Int32.Parse(ddr["posterid"].ToString());
+                    tempLayer = Int32.Parse(ddr["layer"].ToString());
+                    temppostdatetime = Convert.ToDateTime(ddr["postdatetime"].ToString());
+                    postcount = postcount + 1;
+                    if (tempLayer == 0)
+                    {
+                        topiccount = topiccount + 1;
+                    }
+                    if (Convert.ToDateTime(temppostdatetime).ToShortDateString() == DateTime.Now.ToShortDateString())
+                    {
+
+                        todaycount = todaycount + 1;
+                    }
+                    //if(fid.IndexOf(",",0))
+                    if (("," + tempFid.ToString() + ",").IndexOf(fid + ",") == 0)
+                    {
+                        tempfidlist = DbHelper.ExecuteScalar(CommandType.Text, "select IFNULL(`parentidlist`,'') FROM `" + BaseConfigs.GetTablePrefix + "forums` WHERE `fid` = " + tempFid + "", prams).ToString();
+                        //if (tempfidlist == null)
+                        //{
+                        //    tempfidlist = "";
+
+                        //}
+
+                        if (tempfidlist != "")
+                        {
+                            fid = fid + "," + tempfidlist + "," + tempFid.ToString();
+                        }
+                        else
+                        {
+                            fid = fid + "," + tempFid.ToString();
+
+                        }
+                    }
+                    DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE `" + BaseConfigs.GetTablePrefix + "users` SET `posts` = `posts`-1 WHERE `uid` =" + tempPosterid + "");
+
+                }
+            }
+            if (fid.Length > 0)
+            {
+                fid = fid.Substring(1, (fid.Length) - 1);
+
+
+                DbHelper.ExecuteNonQuery(CommandType.Text, "UPDATE `" + BaseConfigs.GetTablePrefix + "statistics` SET `totaltopic`=`totaltopic`-" + topiccount + ", `totalpost`=`totalpost` -" + postcount + "");
+                sqlstr = " UPDATE `" + BaseConfigs.GetTablePrefix + "forums` SET `posts`=`posts` -" + postcount + ",`topics`=`topics` -" + topiccount + ",`todayposts` = `todayposts` - " + todaycount + " WHERE `fid` IN (" + fid + ")";
+                DbHelper.ExecuteNonQuery(CommandType.Text, sqlstr, prams);
+
+                DbHelper.ExecuteNonQuery(CommandType.Text, "DELETE FROM `" + BaseConfigs.GetTablePrefix + "favorites` WHERE `tid` IN (" + topiclist + ")", prams);
+
+                DbHelper.ExecuteNonQuery(CommandType.Text, "DELETE FROM `" + BaseConfigs.GetTablePrefix + "polls` WHERE `tid` IN (" + topiclist + ")", prams);
+                DbHelper.ExecuteNonQuery(CommandType.Text, "DELETE FROM `" + BaseConfigs.GetTablePrefix + "posts1` WHERE `tid` IN (" + topiclist + ")", prams);
+                DbHelper.ExecuteNonQuery(CommandType.Text, "DELETE FROM `" + BaseConfigs.GetTablePrefix + "mytopics` WHERE `tid` IN (" + topiclist + ")", prams);
+            }
+
+            DbHelper.ExecuteNonQuery(CommandType.Text, "DELETE FROM `" + BaseConfigs.GetTablePrefix + "topics` WHERE `closed` IN (" + topiclist + ") OR `tid` IN (" + topiclist + ")", prams);
+
+
+
+
+
+            return 1;
+
+            //DbParameter[] parms = {
+            //        DbHelper.MakeInParam("@tidlist", DbType.AnsiString, 2000, topiclist),
+            //        DbHelper.MakeInParam("@posttablename", DbType.AnsiString, 2000, BaseConfigs.GetTablePrefix + "posts" + posttableid),
+            //        DbHelper.MakeInParam("@chanageposts",DbType.Boolean,1,chanageposts)
+            //    };
+
+            //return DbHelper.ExecuteNonQuery(CommandType.StoredProcedure, BaseConfigs.GetTablePrefix + "deletetopicbytidlist", parms);
         }
 
         public int DeleteClosedTopics(int fid, string topiclist)
@@ -2685,23 +2770,20 @@ namespace Discuz.Data.Sqlite
 									   DbHelper.MakeInParam("@tid", DbType.Int32, 4, tid),
                                        DbHelper.MakeInParam("@mode", DbType.Int32, 4, mode)
 			};
-            /*
-            IDataReader reader;
+            string sql;
             switch (mode)
             {
                 case 1:
-                    reader = DbHelper.ExecuteReader(CommandType.Text, "SELECT TOP 1 * FROM [" + BaseConfigs.GetTablePrefix + "topics] WHERE [fid]=@fid AND [tid]<@tid AND [displayorder]>=0 ORDER BY [tid] DESC", parms);
+                    sql = string.Format("SELECT `tid`,`fid`,`iconid`,`readperm`,`price`,`poster`,`posterid`,`title`,`postdatetime`,`lastpost`,`lastpostid`,`lastposter`,`lastposterid`,`views`,`replies`,`displayorder`,`highlight`,`digest`,`hide`,`attachment`,`moderated`,`closed`,`magic`,`identify`,`special`,`typeid`,`rate`,`attention` FROM `{0}topics` WHERE `fid`=@fid AND `tid`<@tid AND `displayorder`>=0 ORDER BY `tid` DESC LIMIT 0,1", BaseConfigs.GetTablePrefix);
                     break;
                 case 2:
-                    reader = DbHelper.ExecuteReader(CommandType.Text, "SELECT TOP 1 * FROM [" + BaseConfigs.GetTablePrefix + "topics] WHERE [fid]=@fid AND [tid]>@tid AND [displayorder]>=0 ORDER BY [tid] ASC", parms);
+                    sql = string.Format("SELECT `tid`,`fid`,`iconid`,`readperm`,`price`,`poster`,`posterid`,`title`,`postdatetime`,`lastpost`,`lastpostid`,`lastposter`,`lastposterid`,`views`,`replies`,`displayorder`,`highlight`,`digest`,`hide`,`attachment`,`moderated`,`closed`,`magic`,`identify`,`special`,`typeid`,`rate`,`attention` FROM `{0}topics` WHERE `fid`=@fid AND `tid`>@tid AND `displayorder`>=0 ORDER BY `tid` ASC LIMIT 0,1", BaseConfigs.GetTablePrefix);
                     break;
                 default:
-                    reader = DbHelper.ExecuteReader(CommandType.Text, "SELECT TOP 1 * FROM [" + BaseConfigs.GetTablePrefix + "topics] WHERE [tid]=@tid", parms);
+                    sql = string.Format(@"SELECT `tid`,`fid`,`iconid`,`readperm`,`price`,`poster`,`posterid`,`title`,`postdatetime`,`lastpost`,`lastpostid`,`lastposter`,`lastposterid`,`views`,`replies`,`displayorder`,`highlight`,`digest`,`hide`,`attachment`,`moderated`,`closed`,`magic`,`identify`,`special`,`typeid`,`rate`,`attention` FROM `{0}topics` WHERE `tid`=@tid LIMIT 0,1", BaseConfigs.GetTablePrefix);
                     break;
             }
-            return reader;
-             * */
-            return DbHelper.ExecuteReader(CommandType.StoredProcedure, string.Format("{0}gettopicinfo", BaseConfigs.GetTablePrefix), parms);
+            return DbHelper.ExecuteReader(CommandType.Text, sql, parms);
         }
 
 
